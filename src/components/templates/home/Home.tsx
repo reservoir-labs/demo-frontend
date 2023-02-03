@@ -64,9 +64,9 @@ const Home = () => {
 
       <Container>
         <Badge text={'From Token'}/>
-          <Select id={'from'} />
+          <Select id={'from'} options={[{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]}/>
         <Badge text={'To Token'}/>
-          <Select id={'to'} />
+          <Select id={'to'} options={[{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]}/>
       </Container>
     </VStack>
   );
