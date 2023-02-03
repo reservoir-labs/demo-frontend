@@ -2100,7 +2100,7 @@
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.6.tgz#cee20bd55e68a1720bdab363ecf0c821ded4cd45"
   integrity sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==
 
-"@reservoir-labs/sdk-core@^3.1.1":
+"@reservoir-labs/sdk-core@^3.1.2":
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/@reservoir-labs/sdk-core/-/sdk-core-3.1.2.tgz#cdc000643b0790eab780179a2be9055a9dc62502"
   integrity sha512-91QX6Bt5vuQArapDy1TDcgi5VCI+5I+90ud9YAg2ltYkBfxe0AqhS4HnlGguyelszKDMmK5aHUbmrANyhuAR0Q==
@@ -2112,10 +2112,10 @@
     tiny-invariant "^1.1.0"
     toformat "^2.0.0"
 
-"@reservoir-labs/sdk@^0.0.1":
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/@reservoir-labs/sdk/-/sdk-0.0.1.tgz#6b453545901e789a9801b6a4055d4fe00eaea4d8"
-  integrity sha512-x/03IoFy1KHAJBGwgoy1GvVTsqVxmfippE1GCuf7J64vWtgk6ndteDH+HoFq0wOk5dC+MF9cQKlVRjFecDcAFQ==
+"@reservoir-labs/sdk@^0.0.2":
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/@reservoir-labs/sdk/-/sdk-0.0.2.tgz#f99cdfb8277a69ae0cbab68b2225fa02f4561375"
+  integrity sha512-wxq5Is6IdgOOBbsufMrijJOxtmqPuMYxByAy+rQDClMFUlY05bm7WCKfkwm8JPXmuerEt7oXgXQiO37/NMNJ7w==
   dependencies:
     "@ethersproject/address" "^5.0.0"
     "@ethersproject/bignumber" "^5.7.0"
@@ -2124,7 +2124,7 @@
     "@ethersproject/providers" "^5.7.2"
     "@ethersproject/solidity" "^5.0.0"
     "@ethersproject/wallet" "^5.7.0"
-    "@reservoir-labs/sdk-core" "^3.1.1"
+    "@reservoir-labs/sdk-core" "^3.1.2"
     decimal.js "^10.4.3"
     tiny-invariant "^1.1.0"
     tiny-warning "^1.0.3"
