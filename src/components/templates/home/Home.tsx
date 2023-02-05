@@ -11,7 +11,6 @@ import {
     NumberInputField,
     NumberInput
 } from '@chakra-ui/react';
-import {Header} from "../../modules";
 import {Badge, OptionProps, Select} from "@web3uikit/core";
 
 
@@ -25,13 +24,13 @@ const Home = () => {
       </Heading>
       <Container>
         <Badge text={'From Token'}/>
-          <Select id={'from'} options={tokenSelectOptions} />
+          <Select label='select a token' id={'from'} options={tokenSelectOptions} />
           <NumberInput min={0} max={1000000}>
               <NumberInputField>
               </NumberInputField>
           </NumberInput>
         <Badge text={'To Token'}/>
-          <Select id={'to'} options={tokenSelectOptions}/>
+          <Select label='select a token' id={'to'} options={tokenSelectOptions}/>
           <NumberInput min={0} max={1000000}>
               <NumberInputField>
               </NumberInputField>
