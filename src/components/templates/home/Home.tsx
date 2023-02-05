@@ -7,7 +7,7 @@ import {
 } from '@chakra-ui/react';
 import {Badge, OptionProps, Select} from "@web3uikit/core";
 import {Fetcher, Trade} from '@reservoir-labs/sdk'
-import {Token} from "@reservoir-labs/sdk-core";
+import {CurrencyAmount, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {BaseProvider, WebSocketProvider} from "@ethersproject/providers";
 
 const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]
@@ -25,7 +25,7 @@ const Home = () => {
   let fromToken: OptionProps | null
   let toToken: OptionProps | null
 
-  let provider: BaseProvider = new WebSocketProvider('ws://127.0.0.1:8545')
+  const provider: BaseProvider = new WebSocketProvider('ws://127.0.0.1:8545')
 
   const fromTokenChanged = (option: OptionProps) => {
       fromToken = option
@@ -34,16 +34,26 @@ const Home = () => {
   const toTokenChanged = async (option: OptionProps) => {
     toToken = option
 
+    const from = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], 18)
+    const to = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], 18)
     const relevantPairs = await Fetcher.fetchRelevantPairs(
         CHAINID,
-        new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], 18),
-        new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], 18),
+        from,
+        to,
         provider
     );
 
     console.log("relevantPairs", relevantPairs)
 
-    // call Trade.bestTradeExactIn()
+    const route: Trade<Token, Token, TradeType.EXACT_INPUT> = Trade.bestTradeExactIn(
+        relevantPairs,
+        new CurrencyAmount.fromRawAmount(from, "10000000000"),
+        to,
+        { maxNumResults: 1, maxHops: 1},
+        [],
+        ?,
+        ?
+    )
   }
 
   return (
