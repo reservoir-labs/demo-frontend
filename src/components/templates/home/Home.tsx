@@ -45,15 +45,14 @@ const Home = () => {
 
     console.log("relevantPairs", relevantPairs)
 
-    const route: Trade<Token, Token, TradeType.EXACT_INPUT> = Trade.bestTradeExactIn(
+    const route: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
         relevantPairs,
-        new CurrencyAmount.fromRawAmount(from, "10000000000"),
+        CurrencyAmount.fromRawAmount(from, "10000000000"),
         to,
-        { maxNumResults: 1, maxHops: 1},
-        [],
-        ?,
-        ?
+        { maxNumResults: 3, maxHops: 2},
     )
+
+    console.log(route)
   }
 
   return (
