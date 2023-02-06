@@ -3,7 +3,7 @@ import {
     VStack,
     Container,
     NumberInputField,
-    NumberInput
+    NumberInput, useControllableState
 } from '@chakra-ui/react';
 import {Badge, OptionProps, Select} from "@web3uikit/core";
 import {Fetcher, Trade, Pair} from '@reservoir-labs/sdk'
@@ -25,6 +25,9 @@ const Home = () => {
   let fromToken: OptionProps | null
   let toToken: OptionProps | null
 
+  const [fromAmount, setFromAmount] = useControllableState({defaultValue: ''})
+  const [toAmount, setToAmount] = useControllableState({defaultValue: ''})
+
   const provider: BaseProvider = new WebSocketProvider('ws://127.0.0.1:8545')
 
   const fromTokenChanged = (option: OptionProps) => {
@@ -43,17 +46,14 @@ const Home = () => {
         provider
     );
 
-    console.log(typeof relevantPairs)
-    console.log("relevantPairs", relevantPairs)
-
     const route: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
         relevantPairs,
-        CurrencyAmount.fromRawAmount(from, "10000000000"),
+        CurrencyAmount.fromRawAmount(from, "10000000000000000000"),
         to,
         { maxNumResults: 3, maxHops: 2},
     )
 
-    console.log(route)
+    setToAmount(route[0].outputAmount.toExact())
   }
 
   return (
@@ -64,12 +64,12 @@ const Home = () => {
       <Container>
         <Badge text={'From Token'}/>
           <Select label='select a token' id={'from'} options={tokenSelectOptions} onChange={fromTokenChanged}/>
-          <NumberInput min={0} max={1000000}>
+          <NumberInput min={0} max={1000000} id='input-amount'>
               <NumberInputField />
           </NumberInput>
         <Badge text={'To Token'}/>
           <Select label='select a token' id={'to'} options={tokenSelectOptions} onChange={toTokenChanged}/>
-          <NumberInput min={0} max={1000000}>
+          <NumberInput min={0} max={1000000} id='output-amount' value={toAmount}>
               <NumberInputField />
           </NumberInput>
       </Container>
