@@ -17,7 +17,7 @@
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
     "@moralisweb3/next": "^2.9.0",
-    "@reservoir-labs/sdk": "^0.0.2",
+    "@reservoir-labs/sdk": "^0.0.4",
     "@web3uikit/core": "^0.1.5",
     "@web3uikit/icons": "^0.1.5",
     "eslint-config-next": "^13.0.6",
