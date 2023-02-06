@@ -6,7 +6,7 @@ import {
     NumberInput
 } from '@chakra-ui/react';
 import {Badge, OptionProps, Select} from "@web3uikit/core";
-import {Fetcher, Trade} from '@reservoir-labs/sdk'
+import {Fetcher, Trade, Pair} from '@reservoir-labs/sdk'
 import {CurrencyAmount, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {BaseProvider, WebSocketProvider} from "@ethersproject/providers";
 
@@ -36,13 +36,14 @@ const Home = () => {
 
     const from = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], 18)
     const to = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], 18)
-    const relevantPairs = await Fetcher.fetchRelevantPairs(
+    const relevantPairs: Pair[] = await Fetcher.fetchRelevantPairs(
         CHAINID,
         from,
         to,
         provider
     );
 
+    console.log(typeof relevantPairs)
     console.log("relevantPairs", relevantPairs)
 
     const route: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
