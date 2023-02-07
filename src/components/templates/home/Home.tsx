@@ -1,9 +1,19 @@
-import {Container, Heading, NumberInput, NumberInputField, useControllableState, VStack} from '@chakra-ui/react';
+import {
+    Button,
+    ButtonSpinner,
+    Container,
+    Heading,
+    NumberInput,
+    NumberInputField,
+    useControllableState,
+    VStack
+} from '@chakra-ui/react';
 import {Badge, OptionProps, Select} from "@web3uikit/core";
 import {Fetcher, Pair, Trade} from '@reservoir-labs/sdk'
 import {CurrencyAmount, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {BaseProvider, WebSocketProvider} from "@ethersproject/providers";
 import {useEffect} from "react";
+import {BuildError} from "next/dist/client/components/react-dev-overlay/internal/container/BuildError";
 
 const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]
 
@@ -119,6 +129,7 @@ const Home = () => {
               <NumberInputField />
           </NumberInput>
       </Container>
+      <Button colorScheme='green' spinnerPlacement='end'>Swap</Button>
     </VStack>
   );
 };
