@@ -61,7 +61,7 @@ const Home = () => {
             { maxNumResults: 3, maxHops: 2},
         )
 
-        if (route.length  >0) {
+        if (route.length > 0) {
             setToAmount(route[0].outputAmount.toExact())
         }
     }
@@ -72,7 +72,10 @@ const Home = () => {
             CurrencyAmount.fromRawAmount(to, toAmount),
             { maxNumResults: 3, maxHops: 2},
         )
-        setFromAmount(route[0].inputAmount.toExact())
+
+        if (route.length > 0) {
+            setFromAmount(route[0].inputAmount.toExact())
+        }
     }
   }
 
