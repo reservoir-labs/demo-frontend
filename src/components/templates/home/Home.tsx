@@ -3,6 +3,7 @@ import {Badge, OptionProps, Select} from "@web3uikit/core";
 import {Fetcher, Pair, Trade} from '@reservoir-labs/sdk'
 import {CurrencyAmount, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {BaseProvider, WebSocketProvider} from "@ethersproject/providers";
+import {useEffect} from "react";
 
 const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]
 
@@ -17,11 +18,11 @@ const TOKEN_ADDRESS = {
 }
 
 const Home = () => {
-  const [fromToken, setFromToken] = useControllableState({defaultValue: ''})
-  const [toToken, setToToken] = useControllableState({defaultValue: ''})
+  const [fromToken, setFromToken] = useControllableState({defaultValue: null})
+  const [toToken, setToToken] = useControllableState({defaultValue: null})
   const [fromAmount, setFromAmount] = useControllableState({defaultValue: ''})
   const [toAmount, setToAmount] = useControllableState({defaultValue: ''})
-  const [swapType, setSwapType] = useControllableState({defaultValue: TradeType.EXACT_INPUT})
+  const [swapType, setSwapType] = useControllableState({defaultValue: null})
   const provider: BaseProvider = new WebSocketProvider('ws://127.0.0.1:8545')
 
   const _handleQuoteChange = async () => {
@@ -49,6 +50,9 @@ const Home = () => {
       to,
       provider
     )
+
+    console.log("relevant", relevantPairs)
+
     if (swapType === TradeType.EXACT_INPUT) {
         const route: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
             relevantPairs,
@@ -56,7 +60,10 @@ const Home = () => {
             to,
             { maxNumResults: 3, maxHops: 2},
         )
-        setToAmount(route[0].outputAmount.toExact())
+
+        if (route.length  >0) {
+            setToAmount(route[0].outputAmount.toExact())
+        }
     }
     else if (swapType === TradeType.EXACT_OUTPUT) {
         const route: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
@@ -70,29 +77,27 @@ const Home = () => {
   }
 
   const fromTokenChanged = (option: OptionProps) => {
-      setFromToken((option2) => {
-          console.log("prev state", option2)
-          return option
-      })
-      _handleQuoteChange()
+      setFromToken(option)
   }
 
   const toTokenChanged = (option: OptionProps) => {
     setToToken(option)
-    _handleQuoteChange()
   }
 
   const fromAmountChanged = (valString: string, valNum: number) => {
     setSwapType(TradeType.EXACT_INPUT)
     setFromAmount(valNum)
-    _handleQuoteChange()
   }
 
   const toAmountChange = (valString: string, valNum: number) => {
     setSwapType(TradeType.EXACT_OUTPUT)
     setToAmount(valNum)
-    _handleQuoteChange()
   }
+
+
+  useEffect(() => {
+      _handleQuoteChange()
+  }, [fromToken, toToken, fromAmount, toAmount, swapType])
 
   return (
     <VStack w={'full'}>
@@ -102,12 +107,12 @@ const Home = () => {
       <Container>
         <Badge text={'From Token'}/>
           <Select label='select a token' id={'from'} options={tokenSelectOptions} onChange={fromTokenChanged}/>
-          <NumberInput min={0} max={1000000} id='input-amount' value={fromAmount} onChange={fromAmountChanged}>
+          <NumberInput min={0} id='input-amount' value={fromAmount} onChange={fromAmountChanged}>
               <NumberInputField />
           </NumberInput>
         <Badge text={'To Token'}/>
           <Select label='select a token' id={'to'} options={tokenSelectOptions} onChange={toTokenChanged}/>
-          <NumberInput min={0} max={1000000} id='output-amount' value={toAmount} onChange={toAmountChange}>
+          <NumberInput min={0} id='output-amount' value={toAmount} onChange={toAmountChange}>
               <NumberInputField />
           </NumberInput>
       </Container>
