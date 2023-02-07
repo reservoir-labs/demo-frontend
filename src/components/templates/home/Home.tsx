@@ -66,6 +66,7 @@ const Home = () => {
     if (swapType === TradeType.EXACT_INPUT) {
         const route: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
             relevantPairs,
+            // what's the best way to multiply the entered amount with the decimals?
             CurrencyAmount.fromRawAmount(from, fromAmount),
             to,
             { maxNumResults: 3, maxHops: 2},
@@ -79,6 +80,7 @@ const Home = () => {
         const route: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
             relevantPairs,
             from,
+            // what's the best way to multiply the entered amount with the decimals
             CurrencyAmount.fromRawAmount(to, toAmount),
             { maxNumResults: 3, maxHops: 2},
         )
@@ -129,7 +131,7 @@ const Home = () => {
               <NumberInputField />
           </NumberInput>
       </Container>
-      <Button colorScheme='green' spinnerPlacement='end'>Swap</Button>
+      <Button isLoading={false} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
     </VStack>
   );
 };
