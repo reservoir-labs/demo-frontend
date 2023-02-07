@@ -1,12 +1,6 @@
-import {
-    Heading,
-    VStack,
-    Container,
-    NumberInputField,
-    NumberInput, useControllableState
-} from '@chakra-ui/react';
+import {Container, Heading, NumberInput, NumberInputField, useControllableState, VStack} from '@chakra-ui/react';
 import {Badge, OptionProps, Select} from "@web3uikit/core";
-import {Fetcher, Trade, Pair} from '@reservoir-labs/sdk'
+import {Fetcher, Pair, Trade} from '@reservoir-labs/sdk'
 import {CurrencyAmount, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {BaseProvider, WebSocketProvider} from "@ethersproject/providers";
 
@@ -21,39 +15,83 @@ const TOKEN_ADDRESS = {
         'WAVAX': '0x46b142DD1E924FAb83eCc3c08e4D46E82f005e0E'
     }
 }
-const Home = () => {
-  let fromToken: OptionProps | null
-  let toToken: OptionProps | null
 
+const Home = () => {
+  const [fromToken, setFromToken] = useControllableState({defaultValue: ''})
+  const [toToken, setToToken] = useControllableState({defaultValue: ''})
   const [fromAmount, setFromAmount] = useControllableState({defaultValue: ''})
   const [toAmount, setToAmount] = useControllableState({defaultValue: ''})
-
+  const [swapType, setSwapType] = useControllableState({defaultValue: TradeType.EXACT_INPUT})
   const provider: BaseProvider = new WebSocketProvider('ws://127.0.0.1:8545')
 
-  const fromTokenChanged = (option: OptionProps) => {
-      fromToken = option
-  }
+  const _handleQuoteChange = async () => {
 
-  const toTokenChanged = async (option: OptionProps) => {
-    toToken = option
+    console.log(fromToken)
+    console.log(toToken)
+    console.log(fromAmount)
+    console.log(toAmount)
+    if (fromToken == null || toToken == null) {
+        return
+    }
+    if (fromToken.id === toToken.id) {
+        return
+    }
+    if (fromAmount === '' && swapType === TradeType.EXACT_INPUT) {
+        return
+    }
 
     const from = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], 18)
     const to = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], 18)
+
     const relevantPairs: Pair[] = await Fetcher.fetchRelevantPairs(
-        CHAINID,
-        from,
-        to,
-        provider
-    );
-
-    const route: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
-        relevantPairs,
-        CurrencyAmount.fromRawAmount(from, "10000000000000000000"),
-        to,
-        { maxNumResults: 3, maxHops: 2},
+      CHAINID,
+      from,
+      to,
+      provider
     )
+    if (swapType === TradeType.EXACT_INPUT) {
+        const route: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
+            relevantPairs,
+            CurrencyAmount.fromRawAmount(from, fromAmount),
+            to,
+            { maxNumResults: 3, maxHops: 2},
+        )
+        setToAmount(route[0].outputAmount.toExact())
+    }
+    else if (swapType === TradeType.EXACT_OUTPUT) {
+        const route: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
+            relevantPairs,
+            from,
+            CurrencyAmount.fromRawAmount(to, toAmount),
+            { maxNumResults: 3, maxHops: 2},
+        )
+        setFromAmount(route[0].inputAmount.toExact())
+    }
+  }
 
-    setToAmount(route[0].outputAmount.toExact())
+  const fromTokenChanged = (option: OptionProps) => {
+      setFromToken((option2) => {
+          console.log("prev state", option2)
+          return option
+      })
+      _handleQuoteChange()
+  }
+
+  const toTokenChanged = (option: OptionProps) => {
+    setToToken(option)
+    _handleQuoteChange()
+  }
+
+  const fromAmountChanged = (valString: string, valNum: number) => {
+    setSwapType(TradeType.EXACT_INPUT)
+    setFromAmount(valNum)
+    _handleQuoteChange()
+  }
+
+  const toAmountChange = (valString: string, valNum: number) => {
+    setSwapType(TradeType.EXACT_OUTPUT)
+    setToAmount(valNum)
+    _handleQuoteChange()
   }
 
   return (
@@ -64,12 +102,12 @@ const Home = () => {
       <Container>
         <Badge text={'From Token'}/>
           <Select label='select a token' id={'from'} options={tokenSelectOptions} onChange={fromTokenChanged}/>
-          <NumberInput min={0} max={1000000} id='input-amount'>
+          <NumberInput min={0} max={1000000} id='input-amount' value={fromAmount} onChange={fromAmountChanged}>
               <NumberInputField />
           </NumberInput>
         <Badge text={'To Token'}/>
           <Select label='select a token' id={'to'} options={tokenSelectOptions} onChange={toTokenChanged}/>
-          <NumberInput min={0} max={1000000} id='output-amount' value={toAmount}>
+          <NumberInput min={0} max={1000000} id='output-amount' value={toAmount} onChange={toAmountChange}>
               <NumberInputField />
           </NumberInput>
       </Container>
