@@ -9,15 +9,494 @@ import {
     VStack
 } from '@chakra-ui/react';
 import {Badge, OptionProps, Select} from "@web3uikit/core";
-import {Fetcher, Pair, Trade} from '@reservoir-labs/sdk'
-import {CurrencyAmount, Token, TradeType} from "@reservoir-labs/sdk-core";
+import {Fetcher, Pair, Router, SwapParameters, Trade} from '@reservoir-labs/sdk'
+import {CurrencyAmount, Percent, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {BaseProvider, WebSocketProvider} from "@ethersproject/providers";
+import {Contract} from "@ethersproject/contracts";
 import {useEffect} from "react";
-import {BuildError} from "next/dist/client/components/react-dev-overlay/internal/container/BuildError";
 
 const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]
 
 const CHAINID = 43114
+const SLIPPAGE = new Percent(1, 100) // 1%
+const SWAP_RECIPIENT = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' // default anvil account
+const ROUTER_ADDRESS = '0x5067457698Fd6Fa1C6964e416b3f42713513B3dD'
+const ROUTER_INTERFACE = [
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "aFactory",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "aWETH",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [],
+        "name": "WETH",
+        "outputs": [
+            {
+                "internalType": "contract IWETH",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "aTokenA",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "aTokenB",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aCurveId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aAmountADesired",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aAmountBDesired",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aAmountAMin",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aAmountBMin",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "aTo",
+                "type": "address"
+            }
+        ],
+        "name": "addLiquidity",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "rAmountA",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "rAmountB",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "rLiq",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "aDeadline",
+                "type": "uint256"
+            }
+        ],
+        "name": "checkDeadline",
+        "outputs": [],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "factory",
+        "outputs": [
+            {
+                "internalType": "contract GenericFactory",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes[]",
+                "name": "aData",
+                "type": "bytes[]"
+            }
+        ],
+        "name": "multicall",
+        "outputs": [
+            {
+                "internalType": "bytes[]",
+                "name": "rResults",
+                "type": "bytes[]"
+            }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "refundETH",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "aTokenA",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "aTokenB",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aCurveId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aLiq",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aAmountAMin",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aAmountBMin",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "aTo",
+                "type": "address"
+            }
+        ],
+        "name": "removeLiquidity",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "rAmountA",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "rAmountB",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "deadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint8",
+                "name": "v",
+                "type": "uint8"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "r",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "s",
+                "type": "bytes32"
+            }
+        ],
+        "name": "selfPermit",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "nonce",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "expiry",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint8",
+                "name": "v",
+                "type": "uint8"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "r",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "s",
+                "type": "bytes32"
+            }
+        ],
+        "name": "selfPermitAllowed",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "nonce",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "expiry",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint8",
+                "name": "v",
+                "type": "uint8"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "r",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "s",
+                "type": "bytes32"
+            }
+        ],
+        "name": "selfPermitAllowedIfNecessary",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "deadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint8",
+                "name": "v",
+                "type": "uint8"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "r",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "s",
+                "type": "bytes32"
+            }
+        ],
+        "name": "selfPermitIfNecessary",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "aAmountIn",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aAmountOutMin",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address[]",
+                "name": "aPath",
+                "type": "address[]"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "aCurveIds",
+                "type": "uint256[]"
+            },
+            {
+                "internalType": "address",
+                "name": "aTo",
+                "type": "address"
+            }
+        ],
+        "name": "swapExactForVariable",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "rAmountOut",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "aAmountOut",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aAmountInMax",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address[]",
+                "name": "aPath",
+                "type": "address[]"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "aCurveIds",
+                "type": "uint256[]"
+            },
+            {
+                "internalType": "address",
+                "name": "aTo",
+                "type": "address"
+            }
+        ],
+        "name": "swapVariableForExact",
+        "outputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "rAmounts",
+                "type": "uint256[]"
+            }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "aToken",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "aAmountMinimum",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "aRecipient",
+                "type": "address"
+            }
+        ],
+        "name": "sweepToken",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "aAmountMinimum",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "aRecipient",
+                "type": "address"
+            }
+        ],
+        "name": "unwrapWETH",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "stateMutability": "payable",
+        "type": "receive"
+    }
+]
 
 const TOKEN_ADDRESS = {
     43114: {
@@ -32,7 +511,10 @@ const Home = () => {
   const [toToken, setToToken] = useControllableState({defaultValue: null})
   const [fromAmount, setFromAmount] = useControllableState({defaultValue: ''})
   const [toAmount, setToAmount] = useControllableState({defaultValue: ''})
+  const [valueAfterSlippage, setValueAfterSlippage] = useControllableState({defaultValue: null})
   const [swapType, setSwapType] = useControllableState({defaultValue: null})
+  const [currentTrade, setCurrentTrade] = useControllableState({defaultValue: null})
+
   const provider: BaseProvider = new WebSocketProvider('ws://127.0.0.1:8545')
 
   const _handleQuoteChange = async () => {
@@ -41,10 +523,13 @@ const Home = () => {
     console.log(toToken)
     console.log(fromAmount)
     console.log(toAmount)
-    if (fromToken == null || toToken == null) {
+    if (fromToken === null || toToken === null) {
         return
     }
     if (fromToken.id === toToken.id) {
+        return
+    }
+    if (swapType === null) {
         return
     }
     if (fromAmount === '' && swapType === TradeType.EXACT_INPUT) {
@@ -64,7 +549,7 @@ const Home = () => {
     console.log("relevant", relevantPairs)
 
     if (swapType === TradeType.EXACT_INPUT) {
-        const route: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
+        const trade: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
             relevantPairs,
             // what's the best way to multiply the entered amount with the decimals?
             CurrencyAmount.fromRawAmount(from, fromAmount),
@@ -72,12 +557,14 @@ const Home = () => {
             { maxNumResults: 3, maxHops: 2},
         )
 
-        if (route.length > 0) {
-            setToAmount(route[0].outputAmount.toExact())
+        if (trade.length > 0) {
+            setToAmount(trade[0].outputAmount.toExact())
+            setValueAfterSlippage(trade[0].minimumAmountOut(SLIPPAGE))
+            setCurrentTrade(trade[0])
         }
     }
     else if (swapType === TradeType.EXACT_OUTPUT) {
-        const route: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
+        const trade: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
             relevantPairs,
             from,
             // what's the best way to multiply the entered amount with the decimals
@@ -85,8 +572,10 @@ const Home = () => {
             { maxNumResults: 3, maxHops: 2},
         )
 
-        if (route.length > 0) {
-            setFromAmount(route[0].inputAmount.toExact())
+        if (trade.length > 0) {
+            setFromAmount(trade[0].inputAmount.toExact())
+            setValueAfterSlippage(trade[0].maximumAmountIn(SLIPPAGE))
+            setCurrentTrade(trade[0])
         }
     }
   }
@@ -110,7 +599,16 @@ const Home = () => {
   }
 
   const doSwap = () => {
+    if (currentTrade === null) {
+        return
+    }
 
+    const swapParams: SwapParameters = Router.swapCallParameters(currentTrade, { allowedSlippage: SLIPPAGE, recipient: SWAP_RECIPIENT })
+    const router = new Contract(ROUTER_ADDRESS, ROUTER_INTERFACE, provider)
+
+    const data = router.interface.encodeFunctionData(swapParams.methodName, swapParams.args);
+
+    console.log(data)
   }
 
   useEffect(() => {
