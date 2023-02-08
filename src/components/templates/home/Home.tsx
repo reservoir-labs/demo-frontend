@@ -109,6 +109,9 @@ const Home = () => {
     setToAmount(valNum)
   }
 
+  const doSwap = () => {
+
+  }
 
   useEffect(() => {
       _handleQuoteChange()
@@ -131,7 +134,7 @@ const Home = () => {
               <NumberInputField />
           </NumberInput>
       </Container>
-      <Button isLoading={false} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
+      <Button isLoading={false} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
     </VStack>
   );
 };
