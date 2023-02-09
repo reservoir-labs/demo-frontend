@@ -14,6 +14,7 @@ import {CurrencyAmount, Percent, Token, TradeType} from "@reservoir-labs/sdk-cor
 import {BaseProvider, WebSocketProvider} from "@ethersproject/providers";
 import {Contract} from "@ethersproject/contracts";
 import {useEffect} from "react";
+import {useAccount, useClient, usePrepareSendTransaction, useSendTransaction} from "wagmi";
 
 const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]
 
@@ -507,6 +508,8 @@ const TOKEN_ADDRESS = {
 }
 
 const Home = () => {
+  const { isConnected } = useAccount()
+  const client = useClient()
   const [fromToken, setFromToken] = useControllableState({defaultValue: null})
   const [toToken, setToToken] = useControllableState({defaultValue: null})
   const [fromAmount, setFromAmount] = useControllableState({defaultValue: ''})
@@ -518,7 +521,6 @@ const Home = () => {
   const provider: BaseProvider = new WebSocketProvider('ws://127.0.0.1:8545')
 
   const _handleQuoteChange = async () => {
-
     console.log(fromToken)
     console.log(toToken)
     console.log(fromAmount)
@@ -582,6 +584,9 @@ const Home = () => {
 
   const fromTokenChanged = (option: OptionProps) => {
       setFromToken(option)
+
+      console.log(isConnected)
+      console.log(client)
   }
 
   const toTokenChanged = (option: OptionProps) => {
@@ -606,9 +611,12 @@ const Home = () => {
     const swapParams: SwapParameters = Router.swapCallParameters(currentTrade, { allowedSlippage: SLIPPAGE, recipient: SWAP_RECIPIENT })
     const router = new Contract(ROUTER_ADDRESS, ROUTER_INTERFACE, provider)
 
-    const data = router.interface.encodeFunctionData(swapParams.methodName, swapParams.args);
+    const callData = router.interface.encodeFunctionData(swapParams.methodName, swapParams.args);
+    console.log("calldata", callData)
 
-    console.log(data)
+    // call wagmi's useSendTransaction / usePrepareSendTransaction / useSignMessage
+    // const { config } = usePrepareSendTransaction({ request: { to: ROUTER_ADDRESS, data: callData } })
+    // const { data, isLoading, isSuccess, sendTransaction } = useSendTransaction(config)
   }
 
   useEffect(() => {
