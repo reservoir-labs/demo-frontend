@@ -12,9 +12,13 @@ import {Badge, OptionProps, Select} from "@web3uikit/core";
 import {Fetcher, Pair, Router, SwapParameters, Trade} from '@reservoir-labs/sdk'
 import {CurrencyAmount, Percent, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {BaseProvider, WebSocketProvider} from "@ethersproject/providers";
-import {Contract} from "@ethersproject/contracts";
 import {useEffect} from "react";
-import {useAccount, useClient, usePrepareSendTransaction, useSendTransaction} from "wagmi";
+import {
+    useAccount,
+    useClient,
+    useContractWrite,
+    usePrepareContractWrite,
+} from "wagmi";
 
 const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]
 
@@ -508,15 +512,29 @@ const TOKEN_ADDRESS = {
 }
 
 const Home = () => {
+  // wallet, provider, smart contract state
   const { isConnected } = useAccount()
   const client = useClient()
+  const [funcName, setFuncName] = useControllableState({defaultValue: null})
+  const [args, setArgs] = useControllableState({defaultValue: null})
+
+  const { config, error } = usePrepareContractWrite({
+    address: ROUTER_ADDRESS,
+    abi: ROUTER_INTERFACE,
+    functionName: funcName,
+    args: args
+  })
+  const { data, isSuccess, write } = useContractWrite(config)
+
+  // app state
   const [fromToken, setFromToken] = useControllableState({defaultValue: null})
   const [toToken, setToToken] = useControllableState({defaultValue: null})
   const [fromAmount, setFromAmount] = useControllableState({defaultValue: ''})
   const [toAmount, setToAmount] = useControllableState({defaultValue: ''})
   const [valueAfterSlippage, setValueAfterSlippage] = useControllableState({defaultValue: null})
   const [swapType, setSwapType] = useControllableState({defaultValue: null})
-  const [currentTrade, setCurrentTrade] = useControllableState({defaultValue: null})
+  // const [currentTrade, setCurrentTrade] = useControllableState({defaultValue: null})
+
 
   const provider: BaseProvider = new WebSocketProvider('ws://127.0.0.1:8545')
 
@@ -550,6 +568,8 @@ const Home = () => {
 
     console.log("relevant", relevantPairs)
 
+    let currentTrade
+
     if (swapType === TradeType.EXACT_INPUT) {
         const trade: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
             relevantPairs,
@@ -562,7 +582,7 @@ const Home = () => {
         if (trade.length > 0) {
             setToAmount(trade[0].outputAmount.toExact())
             setValueAfterSlippage(trade[0].minimumAmountOut(SLIPPAGE))
-            setCurrentTrade(trade[0])
+            currentTrade = trade[0]
         }
     }
     else if (swapType === TradeType.EXACT_OUTPUT) {
@@ -577,8 +597,15 @@ const Home = () => {
         if (trade.length > 0) {
             setFromAmount(trade[0].inputAmount.toExact())
             setValueAfterSlippage(trade[0].maximumAmountIn(SLIPPAGE))
-            setCurrentTrade(trade[0])
+            currentTrade = trade[0]
         }
+    }
+
+    if (currentTrade) {
+        const swapParams: SwapParameters = Router.swapCallParameters(currentTrade, { allowedSlippage: SLIPPAGE, recipient: SWAP_RECIPIENT })
+
+        setFuncName(swapParams.methodName)
+        setArgs(swapParams.args)
     }
   }
 
@@ -604,19 +631,14 @@ const Home = () => {
   }
 
   const doSwap = () => {
-    if (currentTrade === null) {
+    if (funcName === null || args === null) {
         return
     }
 
-    const swapParams: SwapParameters = Router.swapCallParameters(currentTrade, { allowedSlippage: SLIPPAGE, recipient: SWAP_RECIPIENT })
-    const router = new Contract(ROUTER_ADDRESS, ROUTER_INTERFACE, provider)
-
-    const callData = router.interface.encodeFunctionData(swapParams.methodName, swapParams.args);
-    console.log("calldata", callData)
-
-    // call wagmi's useSendTransaction / usePrepareSendTransaction / useSignMessage
-    // const { config } = usePrepareSendTransaction({ request: { to: ROUTER_ADDRESS, data: callData } })
-    // const { data, isLoading, isSuccess, sendTransaction } = useSendTransaction(config)
+    console.log(funcName)
+    console.log(args)
+    console.log(data)
+    write()
   }
 
   useEffect(() => {
