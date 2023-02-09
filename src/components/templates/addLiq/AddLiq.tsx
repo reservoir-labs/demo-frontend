@@ -2,7 +2,7 @@ import {
     Badge,
     Box, Divider,
     Heading, MenuDivider, NumberInput,
-    NumberInputField,
+    NumberInputField, Radio, RadioGroup,
     Select, Spacer, useControllableState,
 } from "@chakra-ui/react";
 
@@ -10,6 +10,7 @@ export const AddLiq = () => {
 
     const [tokenA, setTokenA] = useControllableState({defaultValue: null})
     const [tokenB, setTokenB] = useControllableState({defaultValue: null})
+    const [curveId, setCurveId] = useControllableState({defaultValue: null})
 
     const handleTokenAChange = (event) => {
         console.log(event.target.value)
@@ -20,6 +21,9 @@ export const AddLiq = () => {
 
     const handleTokenBChange = (event) => {
         setTokenB(event.target.value)
+    }
+    const handleCurveChange = (event) => {
+        setCurveId(parseInt(event))
     }
 
     return (
@@ -49,6 +53,13 @@ export const AddLiq = () => {
         <NumberInput>
             <NumberInputField placeholder={'Amount'}></NumberInputField>
         </NumberInput>
+
+        <Badge> Curve Type </Badge>
+        <RadioGroup onChange={handleCurveChange}>
+            <Radio value='0'>Constant Product</Radio>
+            <Radio value='1'>Stable </Radio>
+        </RadioGroup>
+
     </Box>
 
     <Spacer height={'50px'}></Spacer>
