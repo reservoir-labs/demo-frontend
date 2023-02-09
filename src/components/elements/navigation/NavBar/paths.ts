@@ -8,7 +8,7 @@ const NAV_LINKS: ISubNav[] = [
   },
   {
     label: 'Remove liq',
-    href: '/removeliq'
+    href: '/removeLiq'
   }
   // {
   //   label: 'Transfers',
