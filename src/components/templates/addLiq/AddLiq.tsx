@@ -3,7 +3,7 @@ import {
     Box, Divider,
     Heading, MenuDivider, NumberInput,
     NumberInputField, Radio, RadioGroup,
-    Select, Spacer, useControllableState,
+    Select, Spacer, Stat, StatDownArrow, StatGroup, StatLabel, StatNumber, useControllableState,
 } from "@chakra-ui/react";
 
 export const AddLiq = () => {
@@ -68,10 +68,18 @@ export const AddLiq = () => {
         <Heading>
             Pool Info
         </Heading>
-        <Badge variant={'outline'}>Token1 liq</Badge>
 
+        <StatGroup>
+        <Stat>
+            <StatLabel>Amount of SYM in pair</StatLabel>
+            <StatNumber>3123123</StatNumber>
+        </Stat>
 
-        <Badge variant={'outline'}>Token2 liq</Badge>
+        <Stat>
+            <StatLabel>Amount of SYM in pair</StatLabel>
+            <StatNumber>3123123</StatNumber>
+        </Stat>
+        </StatGroup>
     </Box>
     </>
     )
