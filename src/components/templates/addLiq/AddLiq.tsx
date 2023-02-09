@@ -3,7 +3,7 @@ import {
     Box, Divider,
     Heading, MenuDivider, NumberInput,
     NumberInputField, Radio, RadioGroup,
-    Select, Spacer, Stat, StatDownArrow, StatGroup, StatLabel, StatNumber, useControllableState,
+    Select, Spacer, Stat, StatGroup, StatLabel, StatNumber, useControllableState, Text
 } from "@chakra-ui/react";
 
 export const AddLiq = () => {
@@ -59,6 +59,10 @@ export const AddLiq = () => {
             <Radio value='0'>Constant Product</Radio>
             <Radio value='1'>Stable </Radio>
         </RadioGroup>
+
+        <Spacer height={'10px'}></Spacer>
+
+        <Text>You will receive XXX amount of LP tokens</Text>
 
     </Box>
 
