@@ -552,10 +552,6 @@ const Home = () => {
   const provider: BaseProvider = new WebSocketProvider('ws://127.0.0.1:8545')
 
   const _handleQuoteChange = async () => {
-    console.log(fromToken)
-    console.log(toToken)
-    console.log(fromAmount)
-    console.log(toAmount)
     if (fromToken === null || toToken === null) {
         return
     }
@@ -622,8 +618,6 @@ const Home = () => {
 
   const fromTokenChanged = (option: OptionProps) => {
       setFromToken(option)
-      console.log(fromTokenBal)
-      console.log("fromToken", fromToken)
   }
 
   const toTokenChanged = (option: OptionProps) => {
@@ -645,9 +639,6 @@ const Home = () => {
         return
     }
 
-    console.log("write", write)
-    console.log("error", error)
-    console.log("isLoading", isLoading)
     write()
   }
 
