@@ -25,7 +25,7 @@ const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'
 const CHAINID = 43114
 const SLIPPAGE = new Percent(1, 100) // 1%
 const SWAP_RECIPIENT = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' // default anvil account
-const ROUTER_ADDRESS = '0x5067457698Fd6Fa1C6964e416b3f42713513B3dD'
+const ROUTER_ADDRESS = '0x01db1300f575072131e30d5fc85add64e7eb880e'
 const ROUTER_INTERFACE = [
     {
         "inputs": [
@@ -635,9 +635,7 @@ const Home = () => {
         return
     }
 
-    console.log(data)
     console.log("write", write)
-    console.log("config", config)
     console.log("error", error)
     console.log("isLoading", isLoading)
   }
@@ -666,7 +664,7 @@ const Home = () => {
       <Button isLoading={false} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
 
 
-      <Text maxWidth={'100%'}>On-chain simulation returns {error?.message} </Text>
+      <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
     </VStack>
   );
 };
