@@ -6,12 +6,15 @@ import {
     Select, Spacer, Stat, StatGroup, StatLabel, StatNumber, useControllableState, Text
 } from "@chakra-ui/react";
 import { Pair } from "@reservoir-labs/sdk";
+import {useEffect} from "react";
 
 
 export const AddLiq = () => {
-
     const [tokenA, setTokenA] = useControllableState({defaultValue: null})
     const [tokenB, setTokenB] = useControllableState({defaultValue: null})
+
+    const [tokenAAmt, setTokenAAmt] = useControllableState({defaultValue: null})
+    const [tokenBAmt, setTokenBAmt] = useControllableState({defaultValue: null})
     const [curveId, setCurveId] = useControllableState({defaultValue: null})
 
     const handleTokenAChange = (event) => {
@@ -28,6 +31,21 @@ export const AddLiq = () => {
         setCurveId(parseInt(event))
     }
 
+    const calcAddLiqAmounts = () => {
+        if (tokenA == null || tokenB == null || curveId == null) {
+            return
+        }
+        if (tokenAAmt == null) {
+            return
+        }
+
+
+    }
+
+    useEffect(() => {
+        calcAddLiqAmounts()
+    }, [tokenA, tokenB, tokenAAmt, tokenBAmt, curveId])
+
     return (
     <>
     <Heading size="lg" marginBottom={6}>
@@ -43,7 +61,7 @@ export const AddLiq = () => {
         </Select>
 
         <NumberInput >
-            <NumberInputField placeholder={'Amount'}></NumberInputField>
+            <NumberInputField placeholder={'Amount'} value={tokenAAmt} onChange={setTokenAAmt}></NumberInputField>
         </NumberInput>
 
         <Badge> Second token </Badge>
@@ -53,7 +71,7 @@ export const AddLiq = () => {
             <option value={'WAVAX'}>WAVAX</option>
         </Select>
         <NumberInput>
-            <NumberInputField placeholder={'Amount'}></NumberInputField>
+            <NumberInputField placeholder={'Amount'} value={tokenBAmt} onChange={setTokenBAmt}></NumberInputField>
         </NumberInput>
 
         <Badge> Curve Type </Badge>
