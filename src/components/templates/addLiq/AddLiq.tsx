@@ -5,6 +5,8 @@ import {
     NumberInputField, Radio, RadioGroup,
     Select, Spacer, Stat, StatGroup, StatLabel, StatNumber, useControllableState, Text
 } from "@chakra-ui/react";
+import { Pair } from "@reservoir-labs/sdk";
+
 
 export const AddLiq = () => {
 
@@ -35,9 +37,9 @@ export const AddLiq = () => {
     <Box>
         <Badge> First Token </Badge>
         <Select placeholder='select first token' id={'firstToken'} onChange={handleTokenAChange}>
-            <option value={'a'}>a</option>
-            <option value={'b'}>b</option>
-            <option value={'c'}>c</option>
+            <option value={'USDC'}>USDC</option>
+            <option value={'USDT'}>USDT</option>
+            <option value={'WAVAX'}>WAVAX</option>
         </Select>
 
         <NumberInput >
@@ -46,9 +48,9 @@ export const AddLiq = () => {
 
         <Badge> Second token </Badge>
         <Select placeholder={'select second token'} id={'secondToken'} onChange={handleTokenBChange}>
-            <option value={'a'}>a</option>
-            <option value={'b'}>b</option>
-            <option value={'c'}>c</option>
+            <option value={'USDC'}>USDC</option>
+            <option value={'USDT'}>USDT</option>
+            <option value={'WAVAX'}>WAVAX</option>
         </Select>
         <NumberInput>
             <NumberInputField placeholder={'Amount'}></NumberInputField>
