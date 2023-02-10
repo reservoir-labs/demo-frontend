@@ -522,9 +522,11 @@ const Home = () => {
     address: ROUTER_ADDRESS,
     abi: ROUTER_INTERFACE,
     functionName: funcName,
-    args: args
+    args: args,
+    // this flag may not be necessary
+    enabled: (funcName != null && args != null)
   })
-  const { data, isSuccess, write } = useContractWrite(config)
+  const { data, isLoading, isSuccess, write } = useContractWrite(config)
 
   // app state
   const [fromToken, setFromToken] = useControllableState({defaultValue: null})
@@ -533,8 +535,6 @@ const Home = () => {
   const [toAmount, setToAmount] = useControllableState({defaultValue: ''})
   const [valueAfterSlippage, setValueAfterSlippage] = useControllableState({defaultValue: null})
   const [swapType, setSwapType] = useControllableState({defaultValue: null})
-  // const [currentTrade, setCurrentTrade] = useControllableState({defaultValue: null})
-
 
   const provider: BaseProvider = new WebSocketProvider('ws://127.0.0.1:8545')
 
@@ -635,10 +635,11 @@ const Home = () => {
         return
     }
 
-    console.log(funcName)
-    console.log(args)
     console.log(data)
-    write()
+    console.log("write", write)
+    console.log("config", config)
+    console.log("error", error)
+    console.log("isLoading", isLoading)
   }
 
   useEffect(() => {
