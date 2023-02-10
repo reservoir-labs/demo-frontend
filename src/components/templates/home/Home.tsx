@@ -19,6 +19,7 @@ import {
     useContractWrite,
     usePrepareContractWrite,
 } from "wagmi";
+import {formatUnits, parseUnits} from "@ethersproject/units";
 
 const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]
 
@@ -556,8 +557,8 @@ const Home = () => {
         return
     }
 
-    const from = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], 18)
-    const to = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], 18)
+    const from = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], 6)
+    const to = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], 6)
 
     const relevantPairs: Pair[] = await Fetcher.fetchRelevantPairs(
       CHAINID,
@@ -574,7 +575,7 @@ const Home = () => {
         const trade: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
             relevantPairs,
             // what's the best way to multiply the entered amount with the decimals?
-            CurrencyAmount.fromRawAmount(from, fromAmount),
+            CurrencyAmount.fromRawAmount(from, parseUnits(fromAmount.toString(), from.decimals).toString()),
             to,
             { maxNumResults: 3, maxHops: 2},
         )
@@ -590,7 +591,7 @@ const Home = () => {
             relevantPairs,
             from,
             // what's the best way to multiply the entered amount with the decimals
-            CurrencyAmount.fromRawAmount(to, toAmount),
+            CurrencyAmount.fromRawAmount(to, parseUnits( toAmount.toString(), to.decimals).toString()),
             { maxNumResults: 3, maxHops: 2},
         )
 
@@ -631,13 +632,14 @@ const Home = () => {
   }
 
   const doSwap = () => {
-    if (funcName === null || args === null) {
+    if (funcName === null || args === null || write == null) {
         return
     }
 
     console.log("write", write)
     console.log("error", error)
     console.log("isLoading", isLoading)
+    write()
   }
 
   useEffect(() => {
