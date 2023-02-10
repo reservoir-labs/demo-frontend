@@ -1,5 +1,5 @@
 import { ChakraProvider } from '@chakra-ui/react';
-import { createClient, WagmiConfig } from 'wagmi';
+import {Chain, createClient, WagmiConfig} from 'wagmi';
 import { configureChains } from '@wagmi/core';
 import {
   arbitrum,
@@ -24,11 +24,28 @@ import { publicProvider } from 'wagmi/providers/public';
 import { SessionProvider } from 'next-auth/react';
 import type { AppProps } from 'next/app';
 
+const localRpc: Chain = {
+    id: 43114,
+    name: "local",
+    network: "local",
+    testnet: true,
+    rpcUrls: {
+        default: {
+            http: ['http://127.0.0.1:8545']
+        }
+    },
+    nativeCurrency: {
+        name: "avax",
+        symbol: "AVAX",
+        decimals: 18
+    }
+}
+
 const { provider, webSocketProvider } = configureChains(
   [
     arbitrum,
     arbitrumGoerli,
-    avalanche,
+    // avalanche,
     avalancheFuji,
     bsc,
     bscTestnet,
@@ -42,6 +59,7 @@ const { provider, webSocketProvider } = configureChains(
     polygon,
     polygonMumbai,
     sepolia,
+    localRpc
   ],
   [publicProvider()],
 );

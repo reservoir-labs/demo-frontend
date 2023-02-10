@@ -4,11 +4,11 @@ const NAV_LINKS: ISubNav[] = [
   { label: 'Swap', href: '/' },
   {
     label: 'Add liq',
-    href: '/transactions',
+    href: '/addLiq',
   },
   {
     label: 'Remove liq',
-    href: '/removeliq'
+    href: '/removeLiq'
   }
   // {
   //   label: 'Transfers',
