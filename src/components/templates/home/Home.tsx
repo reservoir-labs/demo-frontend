@@ -4,7 +4,7 @@ import {
     Container,
     Heading,
     NumberInput,
-    NumberInputField,
+    NumberInputField, Text,
     useControllableState,
     VStack
 } from '@chakra-ui/react';
@@ -664,6 +664,9 @@ const Home = () => {
           </NumberInput>
       </Container>
       <Button isLoading={false} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
+
+
+      <Text maxWidth={'100%'}>On-chain simulation returns {error?.message} </Text>
     </VStack>
   );
 };
