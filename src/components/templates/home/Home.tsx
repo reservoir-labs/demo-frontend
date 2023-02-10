@@ -14,12 +14,11 @@ import {CurrencyAmount, Percent, Token, TradeType} from "@reservoir-labs/sdk-cor
 import {BaseProvider, WebSocketProvider} from "@ethersproject/providers";
 import {useEffect} from "react";
 import {
-    useAccount,
-    useClient,
+    useAccount, useBalance,
     useContractWrite,
     usePrepareContractWrite,
 } from "wagmi";
-import {formatUnits, parseUnits} from "@ethersproject/units";
+import {parseUnits} from "@ethersproject/units";
 
 const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]
 
@@ -514,11 +513,10 @@ const TOKEN_ADDRESS = {
 
 const Home = () => {
   // wallet, provider, smart contract state
-  const { isConnected } = useAccount()
-  const client = useClient()
+  const { address: connectedAddress } = useAccount()
+
   const [funcName, setFuncName] = useControllableState({defaultValue: null})
   const [args, setArgs] = useControllableState({defaultValue: null})
-
   const { config, error } = usePrepareContractWrite({
     address: ROUTER_ADDRESS,
     abi: ROUTER_INTERFACE,
@@ -532,6 +530,20 @@ const Home = () => {
   // app state
   const [fromToken, setFromToken] = useControllableState({defaultValue: null})
   const [toToken, setToToken] = useControllableState({defaultValue: null})
+
+  const { data: fromTokenBal } = useBalance({
+      token: TOKEN_ADDRESS[43114][fromToken?.id],
+      address: connectedAddress,
+      enabled: (connectedAddress != null && fromToken != null),
+      watch: true
+  })
+  const { data: toTokenBal } = useBalance({
+      token: TOKEN_ADDRESS[43114][toToken?.id],
+      address: connectedAddress,
+      enabled: (connectedAddress != null && toToken != null),
+      watch: true
+  })
+
   const [fromAmount, setFromAmount] = useControllableState({defaultValue: ''})
   const [toAmount, setToAmount] = useControllableState({defaultValue: ''})
   const [valueAfterSlippage, setValueAfterSlippage] = useControllableState({defaultValue: null})
@@ -566,8 +578,6 @@ const Home = () => {
       to,
       provider
     )
-
-    console.log("relevant", relevantPairs)
 
     let currentTrade
 
@@ -612,9 +622,8 @@ const Home = () => {
 
   const fromTokenChanged = (option: OptionProps) => {
       setFromToken(option)
-
-      console.log(isConnected)
-      console.log(client)
+      console.log(fromTokenBal)
+      console.log("fromToken", fromToken)
   }
 
   const toTokenChanged = (option: OptionProps) => {
@@ -654,11 +663,13 @@ const Home = () => {
       <Container>
         <Badge text={'From Token'}/>
           <Select label='select a token' id={'from'} options={tokenSelectOptions} onChange={fromTokenChanged}/>
+          <Text>Balance { fromTokenBal?.formatted } </Text>
           <NumberInput min={0} id='input-amount' value={fromAmount} onChange={fromAmountChanged}>
               <NumberInputField />
           </NumberInput>
         <Badge text={'To Token'}/>
           <Select label='select a token' id={'to'} options={tokenSelectOptions} onChange={toTokenChanged}/>
+          <Text>Balance { toTokenBal?.formatted } </Text>
           <NumberInput min={0} id='output-amount' value={toAmount} onChange={toAmountChange}>
               <NumberInputField />
           </NumberInput>
