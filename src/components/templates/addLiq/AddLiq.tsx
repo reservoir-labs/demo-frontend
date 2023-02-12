@@ -5,33 +5,38 @@ import {
     NumberInputField, Radio, RadioGroup,
     Select, Spacer, Stat, StatGroup, StatLabel, StatNumber, useControllableState, Text
 } from "@chakra-ui/react";
-import { Pair } from "@reservoir-labs/sdk";
+import {Fetcher, Pair, Route} from "@reservoir-labs/sdk";
 import {useEffect} from "react";
+import {useProvider} from "wagmi";
+import {CurrencyAmount, Token} from "@reservoir-labs/sdk-core";
+import {CHAINID, TOKEN_ADDRESS} from "../../../constants";
 
 
 export const AddLiq = () => {
+    const provider = useProvider()
+
     const [tokenA, setTokenA] = useControllableState({defaultValue: null})
     const [tokenB, setTokenB] = useControllableState({defaultValue: null})
-
     const [tokenAAmt, setTokenAAmt] = useControllableState({defaultValue: null})
     const [tokenBAmt, setTokenBAmt] = useControllableState({defaultValue: null})
+
     const [curveId, setCurveId] = useControllableState({defaultValue: null})
 
-    const handleTokenAChange = (event) => {
-        console.log(event.target.value)
-        console.log(event)
-
-        setTokenA(event.target.value)
+    const handleTokenAChange = async (event) => {
+        const token = await Fetcher.fetchTokenData(CHAINID, TOKEN_ADDRESS[CHAINID][event.target.value], provider, event.target.value, event.target.value)
+        console.log("token ist", token)
+        setTokenA(token)
     }
 
-    const handleTokenBChange = (event) => {
-        setTokenB(event.target.value)
+    const handleTokenBChange = async (event) => {
+        const token = await Fetcher.fetchTokenData(CHAINID, TOKEN_ADDRESS[CHAINID][event.target.value], provider, event.target.value, event.target.value)
+        setTokenB(token)
     }
     const handleCurveChange = (event) => {
         setCurveId(parseInt(event))
     }
 
-    const calcAddLiqAmounts = () => {
+    const calcAddLiqAmounts = async () => {
         if (tokenA == null || tokenB == null || curveId == null) {
             return
         }
@@ -39,7 +44,26 @@ export const AddLiq = () => {
             return
         }
 
+        let pair: Pair
+        try {
+            pair = await Fetcher.fetchPairData(tokenA, tokenB, curveId, provider)
+        } catch {
+            console.log()
+            pair = new Pair(CurrencyAmount.fromRawAmount(tokenA, 0), CurrencyAmount.fromRawAmount(tokenB, 0), curveId)
+        }
 
+        console.log("pair is", pair)
+
+        // do we need to instantiate a route??
+        const route: Route<Token, Token> = new Route([pair], tokenA, tokenB)
+
+        console.log("midprice", route.midPrice.toSignificant(6))
+
+        const pairExists = pair != null
+
+        console.log("exists", pairExists)
+
+        // setTokenBAmt()
     }
 
     useEffect(() => {
