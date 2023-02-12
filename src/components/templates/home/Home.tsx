@@ -11,12 +11,11 @@ import {
 import {Badge, OptionProps, Select} from "@web3uikit/core";
 import {Fetcher, Pair, Router, SwapParameters, Trade} from '@reservoir-labs/sdk'
 import {CurrencyAmount, Percent, Token, TradeType} from "@reservoir-labs/sdk-core";
-import {BaseProvider, WebSocketProvider} from "@ethersproject/providers";
 import {useEffect} from "react";
 import {
     useAccount, useBalance,
     useContractWrite,
-    usePrepareContractWrite,
+    usePrepareContractWrite, useProvider,
 } from "wagmi";
 import {parseUnits} from "@ethersproject/units";
 import {CHAINID, TOKEN_ADDRESS, SWAP_RECIPIENT, ROUTER_ADDRESS, ROUTER_INTERFACE} from "../../../constants";
@@ -28,6 +27,7 @@ const SLIPPAGE = new Percent(1, 100) // 1%
 
 const Home = () => {
   // wallet, provider, smart contract state
+  const provider = useProvider()
   const { address: connectedAddress } = useAccount()
 
   const [funcName, setFuncName] = useControllableState({defaultValue: null})
@@ -65,8 +65,6 @@ const Home = () => {
   const [toAmount, setToAmount] = useControllableState({defaultValue: ''})
   const [valueAfterSlippage, setValueAfterSlippage] = useControllableState({defaultValue: null})
   const [swapType, setSwapType] = useControllableState({defaultValue: null})
-
-  const provider: BaseProvider = new WebSocketProvider('ws://127.0.0.1:8545')
 
   const _handleQuoteChange = async () => {
     if (fromToken === null || toToken === null) {
