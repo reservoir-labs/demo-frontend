@@ -22,7 +22,6 @@ import {CHAINID, TOKEN_ADDRESS, SWAP_RECIPIENT, ROUTER_ADDRESS, ROUTER_INTERFACE
 
 const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]
 
-
 const SLIPPAGE = new Percent(1, 100) // 1%
 
 const Home = () => {
@@ -181,7 +180,6 @@ const Home = () => {
           </NumberInput>
       </Container>
       <Button isLoading={false} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
-
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
     </VStack>

@@ -19,8 +19,11 @@ export const AddLiq = () => {
     const [tokenB, setTokenB] = useControllableState({defaultValue: null})
     const [tokenAAmt, setTokenAAmt] = useControllableState({defaultValue: null})
     const [tokenBAmt, setTokenBAmt] = useControllableState({defaultValue: null})
-
     const [curveId, setCurveId] = useControllableState({defaultValue: null})
+    const [pairExists, setPairExists] = useControllableState({defaultValue: false})
+
+    const [pairTokenAReserves, setPairTokenAReserves] = useControllableState({defaultValue: null})
+    const [pairTokenBReserves, setPairTokenBReserves] = useControllableState({defaultValue: null})
 
     const handleTokenAChange = async (event) => {
         const token = await Fetcher.fetchTokenData(CHAINID, TOKEN_ADDRESS[CHAINID][event.target.value], provider, event.target.value, event.target.value)
@@ -61,9 +64,21 @@ export const AddLiq = () => {
 
         const pairExists = pair != null
 
+        if (pair != null) {
+            // setTokenBAmt()
+            setPairExists(true)
+
+            setPairTokenAReserves(pair.reserveOf(tokenA).toSignificant(6))
+            setPairTokenBReserves(pair.reserveOf(tokenB).toSignificant(6))
+
+        }
+        else {
+            setPairExists(false)
+        }
+
         console.log("exists", pairExists)
 
-        // setTokenBAmt()
+
     }
 
     useEffect(() => {
@@ -106,7 +121,7 @@ export const AddLiq = () => {
 
         <Spacer height={'10px'}></Spacer>
 
-        <Text>You will receive XXX amount of LP tokens</Text>
+        <Text> { pairExists ? "You will receive XXX amount of LP tokens" : "This pair does not exist yet. You're the first to add liq for this pair" } </Text>
 
     </Box>
 
@@ -114,18 +129,18 @@ export const AddLiq = () => {
 
     <Box>
         <Heading>
-            Pool Info
+            DEBUG - Pool Info
         </Heading>
 
         <StatGroup>
         <Stat>
-            <StatLabel>Amount of SYM in pair</StatLabel>
-            <StatNumber>3123123</StatNumber>
+            <StatLabel>Amount of {tokenA?.symbol} in pair</StatLabel>
+            <StatNumber>{pairTokenAReserves}</StatNumber>
         </Stat>
 
         <Stat>
-            <StatLabel>Amount of SYM in pair</StatLabel>
-            <StatNumber>3123123</StatNumber>
+            <StatLabel>Amount of {tokenB?.symbol} in pair</StatLabel>
+            <StatNumber>{pairTokenBReserves}</StatNumber>
         </Stat>
         </StatGroup>
     </Box>
