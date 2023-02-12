@@ -80,7 +80,6 @@ export const AddLiq = () => {
                 const correspondingAmount = midPrice.quote(CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString()))
                 setTokenAAmt(correspondingAmount.toSignificant(6))
             }
-            // console.log("midprice", route.midPrice.toSignificant(6))
         }
         else {
             setPairExists(false)
