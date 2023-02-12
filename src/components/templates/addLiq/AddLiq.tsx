@@ -10,6 +10,7 @@ import {useEffect} from "react";
 import {useProvider} from "wagmi";
 import {CurrencyAmount, Token} from "@reservoir-labs/sdk-core";
 import {CHAINID, TOKEN_ADDRESS} from "../../../constants";
+import {parseUnits} from "@ethersproject/units";
 
 
 export const AddLiq = () => {
@@ -17,8 +18,9 @@ export const AddLiq = () => {
 
     const [tokenA, setTokenA] = useControllableState({defaultValue: null})
     const [tokenB, setTokenB] = useControllableState({defaultValue: null})
-    const [tokenAAmt, setTokenAAmt] = useControllableState({defaultValue: null})
-    const [tokenBAmt, setTokenBAmt] = useControllableState({defaultValue: null})
+    const [tokenAAmt, setTokenAAmt] = useControllableState({defaultValue: ''})
+    const [tokenBAmt, setTokenBAmt] = useControllableState({defaultValue: ''})
+    const [tokenAAsQuote, setTokenAAsQuote] = useControllableState({defaultValue: false})
     const [curveId, setCurveId] = useControllableState({defaultValue: null})
     const [pairExists, setPairExists] = useControllableState({defaultValue: false})
 
@@ -27,7 +29,6 @@ export const AddLiq = () => {
 
     const handleTokenAChange = async (event) => {
         const token = await Fetcher.fetchTokenData(CHAINID, TOKEN_ADDRESS[CHAINID][event.target.value], provider, event.target.value, event.target.value)
-        console.log("token ist", token)
         setTokenA(token)
     }
 
@@ -35,50 +36,55 @@ export const AddLiq = () => {
         const token = await Fetcher.fetchTokenData(CHAINID, TOKEN_ADDRESS[CHAINID][event.target.value], provider, event.target.value, event.target.value)
         setTokenB(token)
     }
+
     const handleCurveChange = (event) => {
         setCurveId(parseInt(event))
     }
 
     const calcAddLiqAmounts = async () => {
-        if (tokenA == null || tokenB == null || curveId == null) {
+        if (tokenA === null || tokenB === null || curveId === null) {
             return
         }
-        if (tokenAAmt == null) {
+        // this should not ever be allowed to happen on the UI
+        if (tokenA.equals(tokenB)) {
+            return
+        }
+        if (tokenAAmt === '' && tokenAAsQuote || tokenBAmt === '' && !tokenAAsQuote) {
             return
         }
 
-        let pair: Pair
+        let pair: Pair | null
         try {
             pair = await Fetcher.fetchPairData(tokenA, tokenB, curveId, provider)
         } catch {
-            console.log()
-            pair = new Pair(CurrencyAmount.fromRawAmount(tokenA, 0), CurrencyAmount.fromRawAmount(tokenB, 0), curveId)
+            pair = null
         }
 
-        console.log("pair is", pair)
-
-        // do we need to instantiate a route??
-        const route: Route<Token, Token> = new Route([pair], tokenA, tokenB)
-
-        console.log("midprice", route.midPrice.toSignificant(6))
-
-        const pairExists = pair != null
-
         if (pair != null) {
-            // setTokenBAmt()
             setPairExists(true)
-
             setPairTokenAReserves(pair.reserveOf(tokenA).toSignificant(6))
             setPairTokenBReserves(pair.reserveOf(tokenB).toSignificant(6))
 
+            if (tokenAAsQuote) {
+                // unsure if this is the best way or we can just use pair.token0/1Price()
+                const route: Route<Token, Token> = new Route([pair], tokenA, tokenB)
+                const midPrice = route.midPrice
+
+                const correspondingAmount = midPrice.quote(CurrencyAmount.fromRawAmount(tokenA, parseUnits(tokenAAmt, tokenA.decimals).toString()))
+                setTokenBAmt(correspondingAmount.toSignificant(6))
+            }
+            else {
+                const route: Route<Token, Token> = new Route([pair], tokenB, tokenA)
+                const midPrice = route.midPrice
+
+                const correspondingAmount = midPrice.quote(CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString()))
+                setTokenAAmt(correspondingAmount.toSignificant(6))
+            }
+            // console.log("midprice", route.midPrice.toSignificant(6))
         }
         else {
             setPairExists(false)
         }
-
-        console.log("exists", pairExists)
-
-
     }
 
     useEffect(() => {
@@ -99,8 +105,8 @@ export const AddLiq = () => {
             <option value={'WAVAX'}>WAVAX</option>
         </Select>
 
-        <NumberInput >
-            <NumberInputField placeholder={'Amount'} value={tokenAAmt} onChange={setTokenAAmt}></NumberInputField>
+        <NumberInput value={tokenAAmt} onChange={(value) => {setTokenAAmt(value); setTokenAAsQuote(true) }}>
+            <NumberInputField placeholder={'Amount'} />
         </NumberInput>
 
         <Badge> Second token </Badge>
@@ -109,8 +115,8 @@ export const AddLiq = () => {
             <option value={'USDT'}>USDT</option>
             <option value={'WAVAX'}>WAVAX</option>
         </Select>
-        <NumberInput>
-            <NumberInputField placeholder={'Amount'} value={tokenBAmt} onChange={setTokenBAmt}></NumberInputField>
+        <NumberInput value={tokenBAmt} onChange={(value) => {setTokenBAmt(value); setTokenAAsQuote(false)} }>
+            <NumberInputField placeholder={'Amount'} />
         </NumberInput>
 
         <Badge> Curve Type </Badge>
