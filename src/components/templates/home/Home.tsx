@@ -47,14 +47,14 @@ const Home = () => {
   const [toToken, setToToken] = useControllableState({defaultValue: null})
 
   const { data: fromTokenBal } = useBalance({
-      token: TOKEN_ADDRESS[43114][fromToken?.id],
+      token: TOKEN_ADDRESS[CHAINID][fromToken?.id],
       chainId: CHAINID,
       address: connectedAddress,
       enabled: (connectedAddress != null && fromToken != null),
       watch: true
   })
   const { data: toTokenBal } = useBalance({
-      token: TOKEN_ADDRESS[43114][toToken?.id],
+      token: TOKEN_ADDRESS[CHAINID][toToken?.id],
       chainId: CHAINID,
       address: connectedAddress,
       enabled: (connectedAddress != null && toToken != null),
