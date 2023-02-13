@@ -3,19 +3,33 @@ import {
     Box, Divider,
     Heading, MenuDivider, NumberInput,
     NumberInputField, Radio, RadioGroup,
-    Select, Spacer, Stat, StatGroup, StatLabel, StatNumber, useControllableState, Text
+    Select, Spacer, Stat, StatGroup, StatLabel, StatNumber, useControllableState, Text, Button
 } from "@chakra-ui/react";
 import {Fetcher, Pair, Route} from "@reservoir-labs/sdk";
 import {useEffect} from "react";
-import {useProvider} from "wagmi";
+import {useAccount, useContractWrite, usePrepareContractWrite, useProvider} from "wagmi";
 import {CurrencyAmount, Token} from "@reservoir-labs/sdk-core";
-import {CHAINID, TOKEN_ADDRESS} from "../../../constants";
+import {CHAINID, ROUTER_ADDRESS, ROUTER_INTERFACE, TOKEN_ADDRESS} from "../../../constants";
 import {parseUnits} from "@ethersproject/units";
-
+import {calculateSlippageAmount} from "../../../utils/math";
+import JSBI from "jsbi";
 
 export const AddLiq = () => {
+    // wallet, provider, smart contract state
     const provider = useProvider()
+    const { address: connectedAddress } = useAccount()
+    const [funcName, setFuncName] = useControllableState({defaultValue: null})
+    const [args, setArgs] = useControllableState({defaultValue: null})
+    const { config, error } = usePrepareContractWrite({
+        address: ROUTER_ADDRESS,
+        abi: ROUTER_INTERFACE,
+        functionName: funcName,
+        args: args,
+        enabled: (funcName != null && args != null)
+    })
+    const { write } = useContractWrite(config)
 
+    // page state
     const [tokenA, setTokenA] = useControllableState({defaultValue: null})
     const [tokenB, setTokenB] = useControllableState({defaultValue: null})
     const [tokenAAmt, setTokenAAmt] = useControllableState({defaultValue: ''})
@@ -80,10 +94,42 @@ export const AddLiq = () => {
                 const correspondingAmount = midPrice.quote(CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString()))
                 setTokenAAmt(correspondingAmount.toSignificant(6))
             }
+
+            if (tokenAAmt !== '' && tokenBAmt !== '') {
+                const tokenARawAmt = parseUnits(tokenAAmt, tokenA.decimals).toString()
+                const tokenBRawAmt = parseUnits(tokenBAmt, tokenB.decimals).toString()
+
+                const tokenASlippageAmt = calculateSlippageAmount(JSBI.BigInt(tokenARawAmt), 100)  // 1%
+                const tokenBSlippageAmt = calculateSlippageAmount(JSBI.BigInt(tokenBRawAmt), 100)
+                console.log("slippage amt", tokenBSlippageAmt)
+
+                setFuncName('addLiquidity')
+                setArgs([
+                    tokenA.address,
+                    tokenB.address,
+                    curveId,
+                    tokenARawAmt,
+                    tokenBRawAmt,
+                    tokenASlippageAmt[0].toString(),
+                    tokenBSlippageAmt[0].toString(),
+                    connectedAddress
+                ])
+            }
         }
         else {
             setPairExists(false)
         }
+    }
+
+    const doAddLiquidity = () => {
+        if (funcName === null || args == null || write == null) {
+            return
+        }
+
+        console.log("funcname", funcName)
+        console.log("args", args)
+
+        // write()
     }
 
     useEffect(() => {
@@ -128,6 +174,7 @@ export const AddLiq = () => {
 
         <Text> { pairExists ? "You will receive XXX amount of LP tokens" : "This pair does not exist yet. You're the first to add liq for this pair" } </Text>
 
+        <Button isLoading={false} onClick={doAddLiquidity} size='lg'>Add Liquidity</Button>
     </Box>
 
     <Spacer height={'50px'}></Spacer>

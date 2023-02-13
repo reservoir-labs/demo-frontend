@@ -41,7 +41,7 @@ const Home = () => {
   })
   const { data, isLoading, isSuccess, write } = useContractWrite(config)
 
-  // app state
+  // page state
   const [fromToken, setFromToken] = useControllableState({defaultValue: null})
   const [toToken, setToToken] = useControllableState({defaultValue: null})
 
@@ -179,7 +179,7 @@ const Home = () => {
               <NumberInputField />
           </NumberInput>
       </Container>
-      <Button isLoading={false} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
+      <Button isLoading={isLoading} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
     </VStack>
