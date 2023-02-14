@@ -181,17 +181,17 @@ export const AddLiq = () => {
 
     <Box>
         <Heading>
-            DEBUG - Pool Info
+            Pool Info
         </Heading>
 
         <StatGroup>
         <Stat>
-            <StatLabel>Amount of {tokenA?.symbol} in pair</StatLabel>
+            <StatLabel>Amount of {tokenA ? tokenA.symbol : ''} in pair</StatLabel>
             <StatNumber>{pairTokenAReserves}</StatNumber>
         </Stat>
 
         <Stat>
-            <StatLabel>Amount of {tokenB?.symbol} in pair</StatLabel>
+            <StatLabel>Amount of {tokenB ? tokenB.symbol : ''} in pair</StatLabel>
             <StatNumber>{pairTokenBReserves}</StatNumber>
         </Stat>
         </StatGroup>
