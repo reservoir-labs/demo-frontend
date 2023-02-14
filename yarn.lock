@@ -2112,10 +2112,10 @@
     tiny-invariant "^1.1.0"
     toformat "^2.0.0"
 
-"@reservoir-labs/sdk@^0.0.7":
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/@reservoir-labs/sdk/-/sdk-0.0.7.tgz#f6529a1d5e6c14713ea2769df7be83f2632ad7ce"
-  integrity sha512-gkIOBsRsrqy1BQLBicLklPj/E9aqtchVdMA0OBNrXeguGVydj49vWB5TNsjwDmzAwDrtXELSLZ48pgr3l5H+Sw==
+"@reservoir-labs/sdk@^0.0.8":
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/@reservoir-labs/sdk/-/sdk-0.0.8.tgz#39a097988e425acaec570c37a5ce9b5be16e0329"
+  integrity sha512-lJUnOH+uQXYk04Ni0TCbxxEpGQCr4fdq+0tCLMz8a3M1hprSV3HYqrGYWudzcAEvbzA1fPZReEYpSju2UAMugg==
   dependencies:
     "@ethersproject/address" "^5.0.0"
     "@ethersproject/bignumber" "^5.7.0"
