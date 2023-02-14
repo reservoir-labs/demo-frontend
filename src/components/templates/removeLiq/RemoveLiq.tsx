@@ -1,4 +1,12 @@
-import {useAccount, useBalance, useContractWrite, usePrepareContractWrite, useProvider} from "wagmi";
+import {
+    erc20ABI,
+    useAccount,
+    useBalance,
+    useContractRead,
+    useContractWrite,
+    usePrepareContractWrite,
+    useProvider
+} from "wagmi";
 import {
     Badge,
     Button,
@@ -13,7 +21,7 @@ import {
 import {CHAINID, ROUTER_ADDRESS, ROUTER_INTERFACE} from "../../../constants";
 import {useEffect} from "react";
 import {Fetcher} from "@reservoir-labs/sdk";
-
+import {calculateSlippageAmount} from "../../../utils";
 
 export const RemoveLiq = () => {
     const provider = useProvider()
@@ -30,37 +38,83 @@ export const RemoveLiq = () => {
     const { write } = useContractWrite(config)
 
     // app state
-    const [pair, setPair] = useControllableState({defaultValue: null})
     const [allPairs, setAllPairs] = useControllableState({defaultValue: null})
+    const [pair, setPair] = useControllableState({defaultValue: null})
+    const [redeemAmount, setRedeemAmount] = useControllableState({defaultValue: null})
     const { data: lpTokenBalance } = useBalance({
         token: pair?.address,
+        chainId: CHAINID,
         address: connectedAddress,
-        enabled: (connectedAddress !== null && pair !== null)
-
+        enabled: (pair !== null && connectedAddress !== null),
+        watch: true
     })
-    const [tokenAAmt, setTokenAAmt] = useControllableState({defaultValue: null})
-    const [tokenBAmt, setTokenBAmt] = useControllableState({defaultValue: null})
+    const { data : lpTotalSupply } = useContractRead({
+        address: pair ? pair.address : null,
+        abi: erc20ABI,
+        functionName: 'totalSupply',
+        enabled: (pair != null)
+    })
+
+    const [tokenAAmt, setTokenAAmt] = useControllableState({defaultValue: ''})
+    const [tokenBAmt, setTokenBAmt] = useControllableState({defaultValue: ''})
+
+    const calc = () => {
+        if (pair === null || redeemAmount === null) {
+            return
+        }
+
+        const totalSupply = lpTotalSupply
+        console.log("totalSupply", totalSupply.toString())
+        const token0Amt = pair.getLiquidityValue(pair.token0, totalSupply, redeemAmount)
+        const token1Amt = pair.getLiquidityValue(pair.token1, totalSupply, redeemAmount)
+
+        setTokenAAmt(token0Amt)
+        setTokenBAmt(token1Amt)
+
+        setFuncName("removeLiquidity")
+        setArgs([
+            pair.token0.address,
+            pair.token1.address,
+            pair.curveId,
+            redeemAmount,
+            calculateSlippageAmount(token0Amt),
+            calculateSlippageAmount(token1Amt),
+            connectedAddress
+        ])
+    }
 
     const doRemoveLiq = () => {
-
+        // console.log("args", args)
+        console.log("tokenBal", lpTokenBalance)
+        console.log("totalSupply", lpTotalSupply)
     }
 
     useEffect(() => {
         const fetchPairs = async () => {
-            const allPairs = await Fetcher.fetchAllPairs(CHAINID, provider)
-            setAllPairs(allPairs)
+            if (!provider || allPairs !== null) {
+                return
+            }
+            console.log(provider)
+            const allPairsData = await Fetcher.fetchAllPairs(CHAINID, provider)
+            setAllPairs(allPairsData)
         }
         fetchPairs()
     }, [])
 
     useEffect(() => {
-        if (allPairs === null) {
-            return
+        const getPairData = async () => {
+            if (allPairs === null) {
+                return
+            }
+
+            const pairData = await Fetcher.fetchPairDataUsingAddress(CHAINID, allPairs[0], provider)
+            setPair(pairData)
         }
 
-        setPair(allPairs[0])
-
+        getPairData()
     }, [allPairs])
+
+    useEffect(calc, [redeemAmount])
 
     return (
         <>
@@ -69,7 +123,7 @@ export const RemoveLiq = () => {
             </Heading>
 
             <Text maxWidth={'80%'}>Your LP token balance {lpTokenBalance?.formatted} </Text>
-            <NumberInput min={0}>
+            <NumberInput min={0} onChange={setRedeemAmount}>
                 <NumberInputField />
             </NumberInput>
 
