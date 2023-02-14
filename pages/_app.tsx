@@ -21,7 +21,6 @@ import {
 } from '@wagmi/core/chains';
 import { extendTheme } from '@chakra-ui/react';
 import { publicProvider } from 'wagmi/providers/public';
-import { SessionProvider } from 'next-auth/react';
 import type { AppProps } from 'next/app';
 
 const localRpc: Chain = {
@@ -81,9 +80,7 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
   return (
     <ChakraProvider resetCSS theme={theme}>
       <WagmiConfig client={client}>
-        <SessionProvider session={pageProps.session} refetchInterval={0}>
-          <Component {...pageProps} />
-        </SessionProvider>
+        <Component {...pageProps} />
       </WagmiConfig>
     </ChakraProvider>
   );

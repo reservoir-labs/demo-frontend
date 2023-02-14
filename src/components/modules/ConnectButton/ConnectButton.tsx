@@ -1,35 +1,20 @@
 import { InjectedConnector } from 'wagmi/connectors/injected';
-import { signIn, signOut, useSession } from 'next-auth/react';
-import { useAccount, useConnect, useDisconnect, useSignMessage } from 'wagmi';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { Button, Text, HStack, Avatar, useToast } from '@chakra-ui/react';
 import { getEllipsisTxt } from 'utils/format';
-import { useAuthRequestChallengeEvm } from '@moralisweb3/next';
 
 const ConnectButton = () => {
   const { connectAsync } = useConnect({ connector: new InjectedConnector() });
   const { disconnectAsync } = useDisconnect();
-  const { isConnected } = useAccount();
-  const { signMessageAsync } = useSignMessage();
+  const { address, isConnected } = useAccount();
   const toast = useToast();
-  const { data } = useSession();
-  const { requestChallengeAsync } = useAuthRequestChallengeEvm();
 
   const handleAuth = async () => {
     if (isConnected) {
       await disconnectAsync();
     }
     try {
-      const { account, chain } = await connectAsync();
-
-      const challenge = await requestChallengeAsync({ address: account, chainId: chain.id });
-
-      if (!challenge) {
-        throw new Error('No challenge received');
-      }
-
-      const signature = await signMessageAsync({ message: challenge.message });
-
-      await signIn('moralis-auth', { message: challenge.message, signature, network: 'Evm', redirect: false });
+      await connectAsync();
     } catch (e) {
       toast({
         title: 'Oops, something went wrong...',
@@ -43,14 +28,13 @@ const ConnectButton = () => {
 
   const handleDisconnect = async () => {
     await disconnectAsync();
-    signOut({ callbackUrl: '/' });
   };
 
-  if (data?.user) {
+  if (address != null) {
     return (
       <HStack onClick={handleDisconnect} cursor={'pointer'}>
         <Avatar size="xs" />
-        <Text fontWeight="medium">{getEllipsisTxt(data.user.address)}</Text>
+        <Text fontWeight="medium">{getEllipsisTxt(address)}</Text>
       </HStack>
     );
   }
