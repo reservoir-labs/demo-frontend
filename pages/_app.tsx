@@ -21,7 +21,6 @@ import {
 } from '@wagmi/core/chains';
 import { extendTheme } from '@chakra-ui/react';
 import { publicProvider } from 'wagmi/providers/public';
-import { SessionProvider } from 'next-auth/react';
 import type { AppProps } from 'next/app';
 
 const localRpc: Chain = {
@@ -43,22 +42,22 @@ const localRpc: Chain = {
 
 const { provider, webSocketProvider } = configureChains(
   [
-    arbitrum,
-    arbitrumGoerli,
-    // avalanche,
-    avalancheFuji,
-    bsc,
-    bscTestnet,
-    fantom,
-    fantomTestnet,
-    foundry,
-    goerli,
-    mainnet,
-    optimism,
-    optimismGoerli,
-    polygon,
-    polygonMumbai,
-    sepolia,
+    // arbitrum,
+    // arbitrumGoerli,
+    // // avalanche,
+    // avalancheFuji,
+    // bsc,
+    // bscTestnet,
+    // fantom,
+    // fantomTestnet,
+    // foundry,
+    // goerli,
+    // mainnet,
+    // optimism,
+    // optimismGoerli,
+    // polygon,
+    // polygonMumbai,
+    // sepolia,
     localRpc
   ],
   [publicProvider()],
@@ -81,9 +80,7 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
   return (
     <ChakraProvider resetCSS theme={theme}>
       <WagmiConfig client={client}>
-        <SessionProvider session={pageProps.session} refetchInterval={0}>
-          <Component {...pageProps} />
-        </SessionProvider>
+        <Component {...pageProps} />
       </WagmiConfig>
     </ChakraProvider>
   );
