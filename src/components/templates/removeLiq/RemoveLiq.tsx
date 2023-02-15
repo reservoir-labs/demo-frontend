@@ -10,7 +10,6 @@ import {
 import {
     Badge,
     Button,
-    Divider,
     Heading, Input,
     NumberInput,
     NumberInputField,
@@ -22,71 +21,75 @@ import {CHAINID, ROUTER_ADDRESS, ROUTER_INTERFACE} from "../../../constants";
 import {useEffect} from "react";
 import {Fetcher} from "@reservoir-labs/sdk";
 import {calculateSlippageAmount} from "../../../utils";
+import {CurrencyAmount} from "@reservoir-labs/sdk-core";
+import {parseUnits} from "@ethersproject/units";
+import JSBI from "jsbi";
 
 export const RemoveLiq = () => {
     const provider = useProvider()
     const { address: connectedAddress } = useAccount()
-    const [funcName, setFuncName] = useControllableState({defaultValue: null})
     const [args, setArgs] = useControllableState({defaultValue: null})
     const { config, error } = usePrepareContractWrite({
         address: ROUTER_ADDRESS,
         abi: ROUTER_INTERFACE,
-        functionName: funcName,
+        functionName: "removeLiquidity",
         args: args,
-        enabled: (funcName != null && args != null)
+        enabled: args != null
     })
-    const { write } = useContractWrite(config)
+    const { isLoading, write } = useContractWrite(config)
 
     // app state
     const [allPairs, setAllPairs] = useControllableState({defaultValue: null})
     const [pair, setPair] = useControllableState({defaultValue: null})
-    const [redeemAmount, setRedeemAmount] = useControllableState({defaultValue: null})
+    const [redeemAmountInput, setRedeemAmountInput] = useControllableState({defaultValue: null})
     const { data: lpTokenBalance } = useBalance({
-        token: pair?.address,
+        token: '0x48C82748F328350415Ed505c02B0Be0347610713',
         chainId: CHAINID,
         address: connectedAddress,
-        enabled: (pair !== null && connectedAddress !== null),
-        watch: true
+        enabled: (pair != null && connectedAddress != null),
     })
     const { data : lpTotalSupply } = useContractRead({
-        address: pair ? pair.address : null,
+        address: '0x48C82748F328350415Ed505c02B0Be0347610713' ,
         abi: erc20ABI,
         functionName: 'totalSupply',
-        enabled: (pair != null)
     })
 
     const [tokenAAmt, setTokenAAmt] = useControllableState({defaultValue: ''})
     const [tokenBAmt, setTokenBAmt] = useControllableState({defaultValue: ''})
 
     const calc = () => {
-        if (pair === null || redeemAmount === null) {
+        if (pair === null || redeemAmountInput === null) {
             return
         }
 
-        const totalSupply = lpTotalSupply
-        console.log("totalSupply", totalSupply.toString())
+        const totalSupply = CurrencyAmount.fromRawAmount(pair.liquidityToken, lpTotalSupply)
+        const redeemAmount = CurrencyAmount.fromRawAmount(pair.liquidityToken, parseUnits(redeemAmountInput, pair.liquidityToken.decimals).toString())
+
         const token0Amt = pair.getLiquidityValue(pair.token0, totalSupply, redeemAmount)
         const token1Amt = pair.getLiquidityValue(pair.token1, totalSupply, redeemAmount)
 
-        setTokenAAmt(token0Amt)
-        setTokenBAmt(token1Amt)
+        const token0SlippageAmt = calculateSlippageAmount(JSBI.BigInt(parseUnits(token0Amt.toExact(), pair.token0.decimals).toString()), 100)[0]
+        const token1SlippageAmt = calculateSlippageAmount(JSBI.BigInt(parseUnits(token1Amt.toExact(), pair.token1.decimals).toString()), 100)[0]
 
-        setFuncName("removeLiquidity")
+        setTokenAAmt(token0Amt.toExact())
+        setTokenBAmt(token1Amt.toExact())
+
         setArgs([
             pair.token0.address,
             pair.token1.address,
             pair.curveId,
-            redeemAmount,
-            calculateSlippageAmount(token0Amt),
-            calculateSlippageAmount(token1Amt),
+            redeemAmount.quotient.toString(),
+            token0SlippageAmt.toString(), // 1%
+            token1SlippageAmt.toString(),
             connectedAddress
         ])
     }
 
     const doRemoveLiq = () => {
-        // console.log("args", args)
-        console.log("tokenBal", lpTokenBalance)
-        console.log("totalSupply", lpTotalSupply)
+        if (args == null) {
+            return
+        }
+        write()
     }
 
     useEffect(() => {
@@ -94,7 +97,6 @@ export const RemoveLiq = () => {
             if (!provider || allPairs !== null) {
                 return
             }
-            console.log(provider)
             const allPairsData = await Fetcher.fetchAllPairs(CHAINID, provider)
             setAllPairs(allPairsData)
         }
@@ -114,7 +116,7 @@ export const RemoveLiq = () => {
         getPairData()
     }, [allPairs])
 
-    useEffect(calc, [redeemAmount])
+    useEffect(calc, [redeemAmountInput])
 
     return (
         <>
@@ -122,8 +124,8 @@ export const RemoveLiq = () => {
                 Remove Liquidity
             </Heading>
 
-            <Text maxWidth={'80%'}>Your LP token balance {lpTokenBalance?.formatted} </Text>
-            <NumberInput min={0} onChange={setRedeemAmount}>
+            <Text maxWidth={'80%'}>Your LP token balance { lpTokenBalance?.formatted } </Text>
+            <NumberInput min={0} onChange={setRedeemAmountInput}>
                 <NumberInputField />
             </NumberInput>
 
@@ -135,7 +137,7 @@ export const RemoveLiq = () => {
             <Badge>TokenB</Badge>
             <Input isReadOnly={true} value={tokenBAmt} />
 
-            <Button isLoading={false} onClick={doRemoveLiq}>Remove Liquidity</Button>
+            <Button isLoading={isLoading} onClick={doRemoveLiq}>Remove Liquidity</Button>
 
             <Text maxWidth={'100%'}>On-chain simulation returns {error?.message} </Text>
         </>
