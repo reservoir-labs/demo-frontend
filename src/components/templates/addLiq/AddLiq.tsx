@@ -1,17 +1,25 @@
 import {
     Badge,
-    Box, Divider,
-    Heading, MenuDivider, NumberInput,
+    Box,
+    Heading, NumberInput,
     NumberInputField, Radio, RadioGroup,
     Select, Spacer, Stat, StatGroup, StatLabel, StatNumber, useControllableState, Text, Button
 } from "@chakra-ui/react";
 import {Fetcher, Pair, Route} from "@reservoir-labs/sdk";
 import {useEffect} from "react";
-import {useAccount, useContractWrite, usePrepareContractWrite, useProvider} from "wagmi";
+import {
+    erc20ABI,
+    useAccount,
+    useBalance,
+    useContractRead,
+    useContractWrite,
+    usePrepareContractWrite,
+    useProvider
+} from "wagmi";
 import {CurrencyAmount, Token} from "@reservoir-labs/sdk-core";
 import {CHAINID, ROUTER_ADDRESS, ROUTER_INTERFACE, TOKEN_ADDRESS} from "../../../constants";
 import {parseUnits} from "@ethersproject/units";
-import {calculateSlippageAmount} from "../../../utils/math";
+import {calculateSlippageAmount} from "utils/math";
 import JSBI from "jsbi";
 
 export const AddLiq = () => {
@@ -20,12 +28,12 @@ export const AddLiq = () => {
     const { address: connectedAddress } = useAccount()
     const [funcName, setFuncName] = useControllableState({defaultValue: null})
     const [args, setArgs] = useControllableState({defaultValue: null})
-    const { config, error } = usePrepareContractWrite({
+    const { config, error, status } = usePrepareContractWrite({
         address: ROUTER_ADDRESS,
         abi: ROUTER_INTERFACE,
         functionName: funcName,
         args: args,
-        enabled: (funcName != null && args != null)
+        // enabled: (funcName != null && args != null)
     })
     const { write } = useContractWrite(config)
 
@@ -41,6 +49,19 @@ export const AddLiq = () => {
     const [pairTokenAReserves, setPairTokenAReserves] = useControllableState({defaultValue: null})
     const [pairTokenBReserves, setPairTokenBReserves] = useControllableState({defaultValue: null})
 
+    const [expectedLpTokenAmt, setExpectedLpTokenAmt] = useControllableState({defaultValue: null})
+    const { data: userLpTokenBalance } = useBalance({
+        token: '0x48C82748F328350415Ed505c02B0Be0347610713',
+        address: connectedAddress,
+        enabled: (connectedAddress != null),
+        watch: true
+    })
+    const { data : lpTotalSupplyData } = useContractRead({
+        address: '0x48C82748F328350415Ed505c02B0Be0347610713',
+        abi: erc20ABI,
+        functionName: 'totalSupply',
+    })
+
     const handleTokenAChange = async (event) => {
         const token = await Fetcher.fetchTokenData(CHAINID, TOKEN_ADDRESS[CHAINID][event.target.value], provider, event.target.value, event.target.value)
         setTokenA(token)
@@ -49,6 +70,16 @@ export const AddLiq = () => {
     const handleTokenBChange = async (event) => {
         const token = await Fetcher.fetchTokenData(CHAINID, TOKEN_ADDRESS[CHAINID][event.target.value], provider, event.target.value, event.target.value)
         setTokenB(token)
+    }
+
+    const tokenAAmtChanged = (value) => {
+        setTokenAAmt(value)
+        setTokenAAsQuote(true)
+    }
+
+    const tokenBAmtChanged = (value) => {
+        setTokenBAmt(value)
+        setTokenAAsQuote(false)
     }
 
     const handleCurveChange = (event) => {
@@ -79,20 +110,30 @@ export const AddLiq = () => {
             setPairTokenAReserves(pair.reserveOf(tokenA).toSignificant(6))
             setPairTokenBReserves(pair.reserveOf(tokenB).toSignificant(6))
 
+            const lpTotalSupply = CurrencyAmount.fromRawAmount(pair.liquidityToken, lpTotalSupplyData)
+
             if (tokenAAsQuote) {
                 // unsure if this is the best way or we can just use pair.token0/1Price()
                 const route: Route<Token, Token> = new Route([pair], tokenA, tokenB)
                 const midPrice = route.midPrice
 
-                const correspondingAmount = midPrice.quote(CurrencyAmount.fromRawAmount(tokenA, parseUnits(tokenAAmt, tokenA.decimals).toString()))
+                const tokenAQuoteAmt = CurrencyAmount.fromRawAmount(tokenA, parseUnits(tokenAAmt, tokenA.decimals).toString())
+                const correspondingAmount = midPrice.quote(tokenAQuoteAmt)
                 setTokenBAmt(correspondingAmount.toSignificant(6))
+
+                const mintedAmt = pair.getLiquidityMinted(lpTotalSupply, tokenAQuoteAmt, correspondingAmount)
+                setExpectedLpTokenAmt(mintedAmt.toExact())
             }
             else {
                 const route: Route<Token, Token> = new Route([pair], tokenB, tokenA)
                 const midPrice = route.midPrice
 
-                const correspondingAmount = midPrice.quote(CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString()))
+                const tokenBQuoteAmt = CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString())
+                const correspondingAmount = midPrice.quote(tokenBQuoteAmt)
                 setTokenAAmt(correspondingAmount.toSignificant(6))
+
+                const mintedAmt = pair.getLiquidityMinted(lpTotalSupply, correspondingAmount, tokenBQuoteAmt)
+                setExpectedLpTokenAmt(mintedAmt.toExact())
             }
 
             if (tokenAAmt !== '' && tokenBAmt !== '') {
@@ -101,7 +142,9 @@ export const AddLiq = () => {
 
                 const tokenASlippageAmt = calculateSlippageAmount(JSBI.BigInt(tokenARawAmt), 100)  // 1%
                 const tokenBSlippageAmt = calculateSlippageAmount(JSBI.BigInt(tokenBRawAmt), 100)
-                console.log("slippage amt", tokenBSlippageAmt)
+
+                console.log(tokenARawAmt)
+                console.log(tokenBRawAmt)
 
                 setFuncName('addLiquidity')
                 setArgs([
@@ -126,10 +169,7 @@ export const AddLiq = () => {
             return
         }
 
-        console.log("funcname", funcName)
-        console.log("args", args)
-
-        // write()
+        write()
     }
 
     useEffect(() => {
@@ -150,7 +190,7 @@ export const AddLiq = () => {
             <option value={'WAVAX'}>WAVAX</option>
         </Select>
 
-        <NumberInput value={tokenAAmt} onChange={(value) => {setTokenAAmt(value); setTokenAAsQuote(true) }}>
+        <NumberInput value={tokenAAmt} onChange={tokenAAmtChanged}>
             <NumberInputField placeholder={'Amount'} />
         </NumberInput>
 
@@ -160,7 +200,7 @@ export const AddLiq = () => {
             <option value={'USDT'}>USDT</option>
             <option value={'WAVAX'}>WAVAX</option>
         </Select>
-        <NumberInput value={tokenBAmt} onChange={(value) => {setTokenBAmt(value); setTokenAAsQuote(false)} }>
+        <NumberInput value={tokenBAmt} onChange={ tokenBAmtChanged }>
             <NumberInputField placeholder={'Amount'} />
         </NumberInput>
 
@@ -172,9 +212,13 @@ export const AddLiq = () => {
 
         <Spacer height={'10px'}></Spacer>
 
-        <Text> { pairExists ? "You will receive XXX amount of LP tokens" : "This pair does not exist yet. You're the first to add liq for this pair" } </Text>
+        <Text> { pairExists ? `You currently have ${userLpTokenBalance ? userLpTokenBalance.formatted : '0'} LP tokens` : "" } </Text>
+        <Text> { pairExists ? `You will receive ${expectedLpTokenAmt ? expectedLpTokenAmt : '-'} LP tokens` : "This pair does not exist yet. You're the first to add liq for this pair" } </Text>
 
-        <Button isLoading={false} onClick={doAddLiquidity} size='lg'>Add Liquidity</Button>
+        <Text maxWidth={'100%'}>On chain simulation error returns { error ? error.message : '' } </Text>
+        <Text maxWidth={'100%'}>On chain simulation status { status ? status : '' } </Text>
+
+        <Button isLoading={false} onClick={doAddLiquidity} size='lg' colorScheme='green'>Add Liquidity</Button>
     </Box>
 
     <Spacer height={'50px'}></Spacer>

@@ -39,7 +39,7 @@ const Home = () => {
     // this flag may not be necessary
     enabled: (funcName != null && args != null)
   })
-  const { data, isLoading, isSuccess, write } = useContractWrite(config)
+  const { isLoading, write } = useContractWrite(config)
 
   // page state
   const [fromToken, setFromToken] = useControllableState({defaultValue: null})
@@ -69,6 +69,7 @@ const Home = () => {
     if (fromToken === null || toToken === null) {
         return
     }
+    // this should never be allowed to happen on the UI, being able to select the same token
     if (fromToken.id === toToken.id) {
         return
     }
