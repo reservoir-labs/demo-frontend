@@ -23,6 +23,8 @@ import { extendTheme } from '@chakra-ui/react';
 import { publicProvider } from 'wagmi/providers/public';
 import type { AppProps } from 'next/app';
 
+import { Wrapper } from 'components/elements/Wrapper';
+
 const localRpc: Chain = {
     id: 43114,
     name: "local",
@@ -80,7 +82,9 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
   return (
     <ChakraProvider resetCSS theme={theme}>
       <WagmiConfig client={client}>
-        <Component {...pageProps} />
+        <Wrapper>
+          <Component {...pageProps} />
+        </Wrapper>
       </WagmiConfig>
     </ChakraProvider>
   );
