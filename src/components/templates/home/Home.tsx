@@ -180,6 +180,8 @@ const Home = () => {
               <NumberInputField />
           </NumberInput>
       </Container>
+
+      <Text> { swapType === TradeType.EXACT_INPUT ? 'Min amount out' : 'Max amt in' }  { valueAfterSlippage?.toExact() } </Text>
       <Button isLoading={isLoading} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
