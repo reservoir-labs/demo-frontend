@@ -1,6 +1,5 @@
 import {
     Button,
-    ButtonSpinner,
     Container,
     Heading,
     NumberInput,
@@ -64,6 +63,7 @@ const Home = () => {
   const [toAmount, setToAmount] = useControllableState({defaultValue: ''})
   const [valueAfterSlippage, setValueAfterSlippage] = useControllableState({defaultValue: null})
   const [swapType, setSwapType] = useControllableState({defaultValue: null})
+  const [currentTrade, setCurrentTrade] = useControllableState({defaultValue: null})
 
   const _handleQuoteChange = async () => {
     if (fromToken === null || toToken === null) {
@@ -90,10 +90,10 @@ const Home = () => {
       provider
     )
 
-    let currentTrade
+    let trade
 
     if (swapType === TradeType.EXACT_INPUT) {
-        const trade: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
+        const trades: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
             relevantPairs,
             // what's the best way to multiply the entered amount with the decimals?
             CurrencyAmount.fromRawAmount(from, parseUnits(fromAmount.toString(), from.decimals).toString()),
@@ -101,14 +101,14 @@ const Home = () => {
             { maxNumResults: 3, maxHops: 2},
         )
 
-        if (trade.length > 0) {
-            setToAmount(trade[0].outputAmount.toExact())
-            setValueAfterSlippage(trade[0].minimumAmountOut(SLIPPAGE))
-            currentTrade = trade[0]
+        if (trades.length > 0) {
+            setToAmount(trades[0].outputAmount.toExact())
+            setValueAfterSlippage(trades[0].minimumAmountOut(SLIPPAGE))
+            trade = trades[0]
         }
     }
     else if (swapType === TradeType.EXACT_OUTPUT) {
-        const trade: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
+        const trades: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
             relevantPairs,
             from,
             // what's the best way to multiply the entered amount with the decimals
@@ -116,18 +116,19 @@ const Home = () => {
             { maxNumResults: 3, maxHops: 2},
         )
 
-        if (trade.length > 0) {
-            setFromAmount(trade[0].inputAmount.toExact())
-            setValueAfterSlippage(trade[0].maximumAmountIn(SLIPPAGE))
-            currentTrade = trade[0]
+        if (trades.length > 0) {
+            setFromAmount(trades[0].inputAmount.toExact())
+            setValueAfterSlippage(trades[0].maximumAmountIn(SLIPPAGE))
+            trade = trades[0]
         }
     }
 
-    if (currentTrade) {
-        const swapParams: SwapParameters = Router.swapCallParameters(currentTrade, { allowedSlippage: SLIPPAGE, recipient: SWAP_RECIPIENT })
+    if (trade) {
+        const swapParams: SwapParameters = Router.swapCallParameters(trade, { allowedSlippage: SLIPPAGE, recipient: SWAP_RECIPIENT })
 
         setFuncName(swapParams.methodName)
         setArgs(swapParams.args)
+        setCurrentTrade(trade)
     }
   }
 
@@ -182,6 +183,7 @@ const Home = () => {
       </Container>
 
       <Text> { swapType === TradeType.EXACT_INPUT ? 'Min amount out' : 'Max amt in' }  { valueAfterSlippage?.toExact() } </Text>
+      <Text> { currentTrade ? `This swap goes through curveId ${currentTrade.route.pairs[0].curveId}` : '' } </Text>
       <Button isLoading={isLoading} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
