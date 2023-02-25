@@ -7,7 +7,7 @@ export const TOKEN_ADDRESS = {
     }
 }
 export const SWAP_RECIPIENT = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' // default anvil account
-export const ROUTER_ADDRESS = '0x01db1300f575072131e30d5fc85add64e7eb880e'
+export const ROUTER_ADDRESS = '0xdf838f41f3e0d5c0d56112d7d22e5466526c0baa'
 export const ROUTER_INTERFACE = [
     {
         "inputs": [
