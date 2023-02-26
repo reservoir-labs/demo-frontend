@@ -44,22 +44,23 @@ export const AddLiq = () => {
     const [tokenBAmt, setTokenBAmt] = useControllableState({defaultValue: ''})
     const [tokenAAsQuote, setTokenAAsQuote] = useControllableState({defaultValue: false})
     const [curveId, setCurveId] = useControllableState({defaultValue: null})
-    const [pairExists, setPairExists] = useControllableState({defaultValue: false})
+    const [currentPair, setCurrentPair] = useControllableState({defaultValue: null})
 
     const [pairTokenAReserves, setPairTokenAReserves] = useControllableState({defaultValue: null})
     const [pairTokenBReserves, setPairTokenBReserves] = useControllableState({defaultValue: null})
 
     const [expectedLpTokenAmt, setExpectedLpTokenAmt] = useControllableState({defaultValue: null})
     const { data: userLpTokenBalance } = useBalance({
-        token: '0x48C82748F328350415Ed505c02B0Be0347610713',
+        token: currentPair?.liquidityToken.address,
         address: connectedAddress,
-        enabled: (connectedAddress != null),
+        enabled: (connectedAddress != null && currentPair != null),
         watch: true
     })
     const { data : lpTotalSupplyData } = useContractRead({
-        address: '0x48C82748F328350415Ed505c02B0Be0347610713',
+        address: currentPair?.liquidityToken.address,
         abi: erc20ABI,
         functionName: 'totalSupply',
+        enabled: currentPair != null
     })
 
     const handleTokenAChange = async (event) => {
@@ -101,16 +102,16 @@ export const AddLiq = () => {
         let pair: Pair | null
         try {
             pair = await Fetcher.fetchPairData(tokenA, tokenB, curveId, provider)
+            setCurrentPair(pair)
         } catch {
             pair = null
         }
 
-        if (pair != null) {
-            setPairExists(true)
-            setPairTokenAReserves(pair.reserveOf(tokenA).toSignificant(6))
-            setPairTokenBReserves(pair.reserveOf(tokenB).toSignificant(6))
+        if (currentPair != null && lpTotalSupplyData != null) {
+            setPairTokenAReserves(currentPair.reserveOf(tokenA).toSignificant(6))
+            setPairTokenBReserves(currentPair.reserveOf(tokenB).toSignificant(6))
 
-            const lpTotalSupply = CurrencyAmount.fromRawAmount(pair.liquidityToken, lpTotalSupplyData)
+            const lpTotalSupply = CurrencyAmount.fromRawAmount(currentPair.liquidityToken, lpTotalSupplyData)
 
             if (tokenAAsQuote) {
                 // unsure if this is the best way or we can just use pair.token0/1Price()
@@ -121,18 +122,18 @@ export const AddLiq = () => {
                 const correspondingAmount = midPrice.quote(tokenAQuoteAmt)
                 setTokenBAmt(correspondingAmount.toSignificant(6))
 
-                const mintedAmt = pair.getLiquidityMinted(lpTotalSupply, tokenAQuoteAmt, correspondingAmount)
+                const mintedAmt = currentPair.getLiquidityMinted(lpTotalSupply, tokenAQuoteAmt, correspondingAmount)
                 setExpectedLpTokenAmt(mintedAmt.toExact())
             }
             else {
-                const route: Route<Token, Token> = new Route([pair], tokenB, tokenA)
+                const route: Route<Token, Token> = new Route([currentPair], tokenB, tokenA)
                 const midPrice = route.midPrice
 
                 const tokenBQuoteAmt = CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString())
                 const correspondingAmount = midPrice.quote(tokenBQuoteAmt)
                 setTokenAAmt(correspondingAmount.toSignificant(6))
 
-                const mintedAmt = pair.getLiquidityMinted(lpTotalSupply, correspondingAmount, tokenBQuoteAmt)
+                const mintedAmt = currentPair.getLiquidityMinted(lpTotalSupply, correspondingAmount, tokenBQuoteAmt)
                 setExpectedLpTokenAmt(mintedAmt.toExact())
             }
 
@@ -160,7 +161,7 @@ export const AddLiq = () => {
             }
         }
         else {
-            setPairExists(false)
+            setCurrentPair(null)
         }
     }
 
@@ -174,7 +175,7 @@ export const AddLiq = () => {
 
     useEffect(() => {
         calcAddLiqAmounts()
-    }, [tokenA, tokenB, tokenAAmt, tokenBAmt, curveId])
+    }, [tokenA, tokenB, tokenAAmt, tokenBAmt, curveId, lpTotalSupplyData])
 
     return (
     <>
@@ -212,8 +213,8 @@ export const AddLiq = () => {
 
         <Spacer height={'10px'}></Spacer>
 
-        <Text> { pairExists ? `You currently have ${userLpTokenBalance ? userLpTokenBalance.formatted : '0'} LP tokens` : "" } </Text>
-        <Text> { pairExists ? `You will receive ${expectedLpTokenAmt ? expectedLpTokenAmt : '-'} LP tokens` : "This pair does not exist yet. You're the first to add liq for this pair" } </Text>
+        <Text> { currentPair ? `You currently have ${userLpTokenBalance ? userLpTokenBalance.formatted : '0'} LP tokens` : "" } </Text>
+        <Text> { currentPair ? `You will receive ${expectedLpTokenAmt ? expectedLpTokenAmt : '-'} LP tokens` : "This pair does not exist yet. You're the first to add liq for this pair" } </Text>
 
         <Text maxWidth={'100%'}>On chain simulation error returns { error ? error.message : '' } </Text>
         <Text maxWidth={'100%'}>On chain simulation status { status ? status : '' } </Text>
