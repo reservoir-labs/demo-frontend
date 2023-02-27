@@ -123,7 +123,7 @@ export const RemoveLiq = () => {
             </Heading>
 
             <RadioGroup onChange={selectPair}>
-                <Heading size='md'>List of pairs you have tokens for</Heading>
+                <Heading size='md'>List of pairs you have LP tokens for</Heading>
                 <Stack spacing={2} direction={'column'}>
                     { allPairs?.map(item => <Radio size='md' value={item} key={item}> {item} </Radio>) }
                 </Stack>

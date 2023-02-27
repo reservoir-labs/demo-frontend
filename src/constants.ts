@@ -6,6 +6,14 @@ export const TOKEN_ADDRESS = {
         'WAVAX': '0x46b142DD1E924FAb83eCc3c08e4D46E82f005e0E'
     }
 }
+
+export const TOKEN_DECIMALS = {
+    43114: {
+        'USDC': 6,
+        'USDT': 6,
+        'WAVAX': 18
+    }
+}
 export const SWAP_RECIPIENT = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' // default anvil account
 export const ROUTER_ADDRESS = '0xdf838f41f3e0d5c0d56112d7d22e5466526c0baa'
 export const ROUTER_INTERFACE = [

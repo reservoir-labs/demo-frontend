@@ -80,8 +80,8 @@ const Home = () => {
         return
     }
 
-    const from = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], 6)
-    const to = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], 6)
+    const from = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], TOKEN_DECIMALS[CHAINID][fromToken.id])
+    const to = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], TOKEN_DECIMALS[CHAINID][toToken.id])
 
     const relevantPairs: Pair[] = await Fetcher.fetchRelevantPairs(
       CHAINID,
