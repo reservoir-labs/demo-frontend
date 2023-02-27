@@ -92,6 +92,17 @@ export const RemoveLiq = () => {
         write()
     }
 
+    const selectPair = (pairAddress) => {
+        getPairData(pairAddress)
+    }
+
+    const getPairData = async (pairAddress) => {
+        if (pairAddress != null) {
+            const pairData = await Fetcher.fetchPairDataUsingAddress(CHAINID, pairAddress, provider)
+            setPair(pairData)
+        }
+    }
+
     useEffect(() => {
         const fetchPairs = async () => {
             if (!provider || allPairs !== null) {
@@ -99,24 +110,9 @@ export const RemoveLiq = () => {
             }
             const allPairsData = await Fetcher.fetchAllPairs(CHAINID, provider)
             setAllPairs(allPairsData)
-
-            console.log(allPairsData)
         }
         fetchPairs()
     }, [])
-
-    useEffect(() => {
-        const getPairData = async () => {
-            if (allPairs === null) {
-                return
-            }
-
-            const pairData = await Fetcher.fetchPairDataUsingAddress(CHAINID, allPairs[0], provider)
-            setPair(pairData)
-        }
-
-        getPairData()
-    }, [allPairs])
 
     useEffect(calc, [redeemAmountInput])
 
@@ -126,10 +122,10 @@ export const RemoveLiq = () => {
                 Remove Liquidity
             </Heading>
 
-            <RadioGroup >
+            <RadioGroup onChange={selectPair}>
                 <Heading size='md'>List of pairs you have tokens for</Heading>
                 <Stack spacing={2} direction={'column'}>
-                    { allPairs?.map(item => <Radio size='md' value={item}>{item}</Radio>) }
+                    { allPairs?.map(item => <Radio size='md' value={item} key={item}> {item} </Radio>) }
                 </Stack>
             </RadioGroup>
 
