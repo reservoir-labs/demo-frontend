@@ -53,7 +53,23 @@ Notes to the frontend team:
    - the coding styles of js / ts / tsx to adopt in the actual project
       - this frontend repo is done by an engineer who's not familiar with react at all XD  
 3. There may be bugs in the sdk implementation as well so please highlight / discuss with the team if anything feels wrong. 
-
+4. User interaction scenarios 
+    - Swap 
+      - Input is a native token
+      - Output is a native token
+      - Wrapping / unwrapping native token?
+        - E.g. AVAX <=> WAVAX
+    - Add Liq
+      - Add liq to a pair that already exists
+        - One token involves a native token
+        - Does not involve a native token
+      - Add liq to a pair that doesn't already exist, creates the pair in the process
+        - One involves a native token
+        - Does not involve a native token
+    - Remove Liq
+      - Removes liq from an existing pair 
+        - One token involves a native token
+        - Does not involve a native token
 
 ## Things that may go wrong
 
