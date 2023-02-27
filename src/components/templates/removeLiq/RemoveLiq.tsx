@@ -114,7 +114,7 @@ export const RemoveLiq = () => {
         fetchPairs()
     }, [])
 
-    useEffect(calc, [redeemAmountInput])
+    useEffect(calc, [redeemAmountInput, pair])
 
     return (
         <>
@@ -143,7 +143,7 @@ export const RemoveLiq = () => {
             <Badge>TokenB</Badge>
             <Input isReadOnly={true} value={tokenBAmt} />
 
-            <Button isLoading={isLoading} onClick={doRemoveLiq}>Remove Liquidity</Button>
+            <Button isLoading={isLoading} onClick={doRemoveLiq} colorScheme='green'>Remove Liquidity</Button>
 
             <Text maxWidth={'100%'}>On-chain simulation returns {error?.message} </Text>
         </>
