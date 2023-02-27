@@ -17,7 +17,14 @@ import {
     usePrepareContractWrite, useProvider,
 } from "wagmi";
 import {parseUnits} from "@ethersproject/units";
-import {CHAINID, TOKEN_ADDRESS, SWAP_RECIPIENT, ROUTER_ADDRESS, ROUTER_INTERFACE} from "../../../constants";
+import {
+    CHAINID,
+    TOKEN_ADDRESS,
+    SWAP_RECIPIENT,
+    ROUTER_ADDRESS,
+    ROUTER_INTERFACE,
+    TOKEN_DECIMALS
+} from "../../../constants";
 
 const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]
 
