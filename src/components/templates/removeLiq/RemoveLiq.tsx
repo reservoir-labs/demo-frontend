@@ -12,8 +12,8 @@ import {
     Button,
     Heading, Input,
     NumberInput,
-    NumberInputField,
-    Spacer,
+    NumberInputField, Radio, RadioGroup,
+    Spacer, Stack,
     Text,
     useControllableState
 } from "@chakra-ui/react";
@@ -43,13 +43,13 @@ export const RemoveLiq = () => {
     const [pair, setPair] = useControllableState({defaultValue: null})
     const [redeemAmountInput, setRedeemAmountInput] = useControllableState({defaultValue: null})
     const { data: lpTokenBalance } = useBalance({
-        token: '0x48C82748F328350415Ed505c02B0Be0347610713',
+        token: pair?.liquidityToken.address,
         chainId: CHAINID,
         address: connectedAddress,
         enabled: (pair != null && connectedAddress != null),
     })
     const { data : lpTotalSupply } = useContractRead({
-        address: '0x48C82748F328350415Ed505c02B0Be0347610713' ,
+        address: pair?.liquidityToken.address,
         abi: erc20ABI,
         functionName: 'totalSupply',
     })
@@ -79,7 +79,7 @@ export const RemoveLiq = () => {
             pair.token1.address,
             pair.curveId,
             redeemAmount.quotient.toString(),
-            token0SlippageAmt.toString(), // 1%
+            token0SlippageAmt.toString(),
             token1SlippageAmt.toString(),
             connectedAddress
         ])
@@ -90,6 +90,17 @@ export const RemoveLiq = () => {
             return
         }
         write()
+    }
+
+    const selectPair = (pairAddress) => {
+        getPairData(pairAddress)
+    }
+
+    const getPairData = async (pairAddress) => {
+        if (pairAddress != null) {
+            const pairData = await Fetcher.fetchPairDataUsingAddress(CHAINID, pairAddress, provider)
+            setPair(pairData)
+        }
     }
 
     useEffect(() => {
@@ -103,20 +114,7 @@ export const RemoveLiq = () => {
         fetchPairs()
     }, [])
 
-    useEffect(() => {
-        const getPairData = async () => {
-            if (allPairs === null) {
-                return
-            }
-
-            const pairData = await Fetcher.fetchPairDataUsingAddress(CHAINID, allPairs[0], provider)
-            setPair(pairData)
-        }
-
-        getPairData()
-    }, [allPairs])
-
-    useEffect(calc, [redeemAmountInput])
+    useEffect(calc, [redeemAmountInput, pair])
 
     return (
         <>
@@ -124,6 +122,14 @@ export const RemoveLiq = () => {
                 Remove Liquidity
             </Heading>
 
+            <RadioGroup onChange={selectPair}>
+                <Heading size='md'>List of pairs you have LP tokens for</Heading>
+                <Stack spacing={2} direction={'column'}>
+                    { allPairs?.map(item => <Radio size='md' value={item} key={item}> {item} </Radio>) }
+                </Stack>
+            </RadioGroup>
+
+            <Spacer height={'20px'} />
             <Text maxWidth={'80%'}>Your LP token balance { lpTokenBalance?.formatted } </Text>
             <NumberInput min={0} onChange={setRedeemAmountInput}>
                 <NumberInputField />
@@ -137,7 +143,7 @@ export const RemoveLiq = () => {
             <Badge>TokenB</Badge>
             <Input isReadOnly={true} value={tokenBAmt} />
 
-            <Button isLoading={isLoading} onClick={doRemoveLiq}>Remove Liquidity</Button>
+            <Button isLoading={isLoading} onClick={doRemoveLiq} colorScheme='green'>Remove Liquidity</Button>
 
             <Text maxWidth={'100%'}>On-chain simulation returns {error?.message} </Text>
         </>
