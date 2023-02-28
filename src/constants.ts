@@ -1,4 +1,5 @@
 import {WETH9} from "@reservoir-labs/sdk-core";
+import {AddressZero} from "@ethersproject/constants";
 
 
 export const CHAINID = 43114
@@ -7,7 +8,7 @@ export const TOKEN_ADDRESS = {
         'USDC': '0x2B0d36FACD61B71CC05ab8F3D2355ec3631C0dd5',
         'USDT': '0xfbC22278A96299D91d41C453234d97b4F5Eb9B2d',
         'WAVAX': WETH9[43114].address,
-        'AVAX': '0x0000000000000000000000000000000000000000'
+        'AVAX': AddressZero
     }
 }
 

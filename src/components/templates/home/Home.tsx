@@ -58,14 +58,14 @@ const Home = () => {
   const [toToken, setToToken] = useControllableState({defaultValue: null})
 
   const { data: fromTokenBal } = useBalance({
-      token: TOKEN_ADDRESS[CHAINID][fromToken?.id],
+      token: TOKEN_ADDRESS[CHAINID][fromToken?.id] === AddressZero ? null : TOKEN_ADDRESS[CHAINID][fromToken?.id],
       chainId: CHAINID,
       address: connectedAddress,
       enabled: (connectedAddress != null && fromToken != null),
       watch: true
   })
   const { data: toTokenBal } = useBalance({
-      token: TOKEN_ADDRESS[CHAINID][toToken?.id],
+      token: TOKEN_ADDRESS[CHAINID][toToken?.id] === AddressZero ? null : TOKEN_ADDRESS[CHAINID][toToken?.id],
       chainId: CHAINID,
       address: connectedAddress,
       enabled: (connectedAddress != null && toToken != null),
@@ -114,7 +114,7 @@ const Home = () => {
             const trades: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
                 relevantPairs,
                 // what's the best way to multiply the entered amount with the decimals?
-                CurrencyAmount.fromRawAmount(from, parseUnits(fromAmount.toString(), from.decimals).toString()),
+                CurrencyAmount.fromRawAmount(from.wrapped, parseUnits(fromAmount.toString(), from.wrapped.decimals).toString()),
                 to,
                 { maxNumResults: 3, maxHops: 2},
             )
