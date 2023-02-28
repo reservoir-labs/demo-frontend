@@ -12,9 +12,7 @@ import {Fetcher, Pair, Router, SwapParameters, Trade} from '@reservoir-labs/sdk'
 import {CurrencyAmount, Ether, Percent, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {useEffect} from "react";
 import {
-    useAccount, useBalance,
-    useContractWrite,
-    usePrepareContractWrite, useProvider,
+    useAccount, useBalance, usePrepareSendTransaction, useProvider, useSendTransaction,
 } from "wagmi";
 import {parseUnits} from "@ethersproject/units";
 import {
@@ -22,7 +20,6 @@ import {
     TOKEN_ADDRESS,
     SWAP_RECIPIENT,
     ROUTER_ADDRESS,
-    ROUTER_INTERFACE,
     TOKEN_DECIMALS
 } from "../../../constants";
 import {AddressZero} from "@ethersproject/constants";
@@ -40,22 +37,18 @@ const Home = () => {
   // wallet, provider, smart contract state
   const provider = useProvider()
   const { address: connectedAddress } = useAccount()
-
-  const [funcName, setFuncName] = useControllableState({defaultValue: null})
-  const [args, setArgs] = useControllableState({defaultValue: null})
+  const [calldata, setCalldata] = useControllableState({defaultValue: null})
   const [value, setValue] = useControllableState({defaultValue: null})
-  const { config, error } = usePrepareContractWrite({
-    address: ROUTER_ADDRESS,
-    abi: ROUTER_INTERFACE,
-    functionName: funcName,
-    args: args,
+  const { config, error } = usePrepareSendTransaction({
+    request: {
+        to: ROUTER_ADDRESS,
+        value: value,
+        data: calldata
+    },
     // this flag may not be necessary
-    enabled: (funcName != null && args != null),
-    overrides: {
-        value: value
-    }
+    enabled: calldata != null
   })
-  const { isLoading, write } = useContractWrite(config)
+  const { isLoading, sendTransaction } = useSendTransaction(config)
 
   // page state
   const [fromToken, setFromToken] = useControllableState({defaultValue: null})
@@ -118,7 +111,6 @@ const Home = () => {
             const trades: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
                 relevantPairs,
                 // what's the best way to multiply the entered amount with the decimals?
-                // TODO: do we need wrapped here? Seems like no, our sdk can totally handle from being a native
                 CurrencyAmount.fromRawAmount(from, parseUnits(fromAmount.toString(), from.decimals).toString()),
                 to,
                 { maxNumResults: 3, maxHops: 2},
@@ -134,8 +126,7 @@ const Home = () => {
             const trades: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
                 relevantPairs,
                 from,
-                // what's the best way to multiply the entered amount with the decimals
-                CurrencyAmount.fromRawAmount(to, parseUnits( toAmount.toString(), to.decimals).toString()),
+                CurrencyAmount.fromRawAmount(to, parseUnits(toAmount.toString(), to.decimals).toString()),
                 { maxNumResults: 3, maxHops: 2},
             )
 
@@ -148,9 +139,7 @@ const Home = () => {
 
         if (trade) {
             const swapParams: SwapParameters = Router.swapCallParameters(trade, { allowedSlippage: SLIPPAGE, recipient: SWAP_RECIPIENT })
-
-            setFuncName(swapParams.methodName)
-            setArgs(swapParams.args)
+            setCalldata(swapParams.calldata)
             setValue(swapParams.value)
             setCurrentTrade(trade)
         }
@@ -179,11 +168,11 @@ const Home = () => {
   }
 
   const doSwap = () => {
-    if (funcName === null || args === null || write == null) {
+    if (calldata === null || sendTransaction == null) {
         return
     }
 
-    write()
+    sendTransaction()
   }
 
   useEffect(() => {
