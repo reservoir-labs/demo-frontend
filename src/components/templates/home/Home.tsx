@@ -43,13 +43,17 @@ const Home = () => {
 
   const [funcName, setFuncName] = useControllableState({defaultValue: null})
   const [args, setArgs] = useControllableState({defaultValue: null})
+  const [value, setValue] = useControllableState({defaultValue: null})
   const { config, error } = usePrepareContractWrite({
     address: ROUTER_ADDRESS,
     abi: ROUTER_INTERFACE,
     functionName: funcName,
     args: args,
     // this flag may not be necessary
-    enabled: (funcName != null && args != null)
+    enabled: (funcName != null && args != null),
+    overrides: {
+        value: value
+    }
   })
   const { isLoading, write } = useContractWrite(config)
 
@@ -114,7 +118,8 @@ const Home = () => {
             const trades: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
                 relevantPairs,
                 // what's the best way to multiply the entered amount with the decimals?
-                CurrencyAmount.fromRawAmount(from.wrapped, parseUnits(fromAmount.toString(), from.wrapped.decimals).toString()),
+                // TODO: do we need wrapped here? Seems like no, our sdk can totally handle from being a native
+                CurrencyAmount.fromRawAmount(from, parseUnits(fromAmount.toString(), from.decimals).toString()),
                 to,
                 { maxNumResults: 3, maxHops: 2},
             )
@@ -146,6 +151,7 @@ const Home = () => {
 
             setFuncName(swapParams.methodName)
             setArgs(swapParams.args)
+            setValue(swapParams.value)
             setCurrentTrade(trade)
         }
     }
