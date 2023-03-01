@@ -1,6 +1,5 @@
-import {WETH9} from "@reservoir-labs/sdk-core";
+import {Percent, WETH9} from "@reservoir-labs/sdk-core";
 import {AddressZero} from "@ethersproject/constants";
-
 
 export const CHAINID = 43114
 export const TOKEN_ADDRESS = {
@@ -20,6 +19,7 @@ export const TOKEN_DECIMALS = {
         'AVAX': 18
     }
 }
+export const SLIPPAGE = new Percent(1, 100) // 1%
 export const SWAP_RECIPIENT = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' // default anvil account
 export const ROUTER_ADDRESS = '0x7925565bb6a3e6094dc16740b3ac65bc3a53d3ec'
 export const ROUTER_INTERFACE = [

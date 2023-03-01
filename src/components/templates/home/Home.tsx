@@ -9,7 +9,7 @@ import {
 } from '@chakra-ui/react';
 import {Badge, OptionProps, Select} from "@web3uikit/core";
 import {Fetcher, Pair, Router, SwapParameters, Trade} from '@reservoir-labs/sdk'
-import {CurrencyAmount, Ether, Percent, Token, TradeType} from "@reservoir-labs/sdk-core";
+import {CurrencyAmount, Ether, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {useEffect} from "react";
 import {
     useAccount, useBalance, usePrepareSendTransaction, useProvider, useSendTransaction,
@@ -20,7 +20,7 @@ import {
     TOKEN_ADDRESS,
     SWAP_RECIPIENT,
     ROUTER_ADDRESS,
-    TOKEN_DECIMALS
+    TOKEN_DECIMALS, SLIPPAGE
 } from "../../../constants";
 import {AddressZero} from "@ethersproject/constants";
 
@@ -30,8 +30,6 @@ const tokenSelectOptions: OptionProps[] = [
     {label: 'AVAX', id: 'AVAX'},
     {label: 'USDT', id: 'USDT'}
 ]
-
-const SLIPPAGE = new Percent(1, 100) // 1%
 
 const Home = () => {
   // wallet, provider, smart contract state
@@ -104,8 +102,8 @@ const Home = () => {
       provider
     )
     console.log("rel p", relevantPairs)
-    let trade
 
+    let trade
     if (relevantPairs.length > 0) {
         if (swapType === TradeType.EXACT_INPUT) {
             const trades: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(

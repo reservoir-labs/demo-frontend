@@ -5,19 +5,19 @@ import {
     NumberInputField, Radio, RadioGroup,
     Select, Spacer, Stat, StatGroup, StatLabel, StatNumber, useControllableState, Text, Button
 } from "@chakra-ui/react";
-import {Fetcher, Pair, Route} from "@reservoir-labs/sdk";
+import {Fetcher, Pair, Route, Router} from "@reservoir-labs/sdk";
 import {useEffect} from "react";
 import {
     erc20ABI,
     useAccount,
     useBalance,
     useContractRead,
-    useContractWrite,
-    usePrepareContractWrite,
+    useSendTransaction,
+    usePrepareSendTransaction,
     useProvider
 } from "wagmi";
 import {CurrencyAmount, Token} from "@reservoir-labs/sdk-core";
-import {CHAINID, ROUTER_ADDRESS, ROUTER_INTERFACE, TOKEN_ADDRESS} from "../../../constants";
+import {CHAINID, ROUTER_ADDRESS, SLIPPAGE, TOKEN_ADDRESS} from "../../../constants";
 import {parseUnits} from "@ethersproject/units";
 import {calculateSlippageAmount} from "utils/math";
 import JSBI from "jsbi";
@@ -26,16 +26,17 @@ export const AddLiq = () => {
     // wallet, provider, smart contract state
     const provider = useProvider()
     const { address: connectedAddress } = useAccount()
-    const [funcName, setFuncName] = useControllableState({defaultValue: null})
-    const [args, setArgs] = useControllableState({defaultValue: null})
-    const { config, error, status } = usePrepareContractWrite({
-        address: ROUTER_ADDRESS,
-        abi: ROUTER_INTERFACE,
-        functionName: funcName,
-        args: args,
+    const [calldata, setCalldata] = useControllableState({defaultValue: null})
+    const [value, setValue] = useControllableState({defaultValue: null})
+    const { config, error, status } = usePrepareSendTransaction({
+        request: {
+            to: ROUTER_ADDRESS,
+            value: value,
+            data: calldata
+        }
         // enabled: (funcName != null && args != null)
     })
-    const { write } = useContractWrite(config)
+    const { sendTransaction } = useSendTransaction(config)
 
     // page state
     const [tokenA, setTokenA] = useControllableState({defaultValue: null})
@@ -147,17 +148,7 @@ export const AddLiq = () => {
                 console.log(tokenARawAmt)
                 console.log(tokenBRawAmt)
 
-                setFuncName('addLiquidity')
-                setArgs([
-                    tokenA.address,
-                    tokenB.address,
-                    curveId,
-                    tokenARawAmt,
-                    tokenBRawAmt,
-                    tokenASlippageAmt[0].toString(),
-                    tokenBSlippageAmt[0].toString(),
-                    connectedAddress
-                ])
+                setCalldata(Router.addLiquidityParameters(tokenAAmt, tokenBAmt, curveId, SLIPPAGE))
             }
         }
         else {
@@ -166,11 +157,11 @@ export const AddLiq = () => {
     }
 
     const doAddLiquidity = () => {
-        if (funcName === null || args == null || write == null) {
+        if (calldata === null || sendTransaction == null) {
             return
         }
 
-        write()
+        sendTransaction()
     }
 
     useEffect(() => {
