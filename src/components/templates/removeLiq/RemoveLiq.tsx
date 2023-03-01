@@ -20,7 +20,6 @@ import {
 import {CHAINID, ROUTER_ADDRESS, ROUTER_INTERFACE} from "../../../constants";
 import {useEffect} from "react";
 import {Fetcher} from "@reservoir-labs/sdk";
-import {calculateSlippageAmount} from "../../../utils";
 import {CurrencyAmount} from "@reservoir-labs/sdk-core";
 import {parseUnits} from "@ethersproject/units";
 import JSBI from "jsbi";

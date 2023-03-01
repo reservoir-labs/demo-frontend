@@ -5,7 +5,7 @@ import {
     NumberInputField, Radio, RadioGroup,
     Select, Spacer, Stat, StatGroup, StatLabel, StatNumber, useControllableState, Text, Button
 } from "@chakra-ui/react";
-import {Fetcher, Pair, Route, Router} from "@reservoir-labs/sdk";
+import {Fetcher, Pair, Route, Router, SwapParameters} from "@reservoir-labs/sdk";
 import {useEffect} from "react";
 import {
     erc20ABI,
@@ -16,11 +16,10 @@ import {
     usePrepareSendTransaction,
     useProvider
 } from "wagmi";
-import {CurrencyAmount, Token} from "@reservoir-labs/sdk-core";
-import {CHAINID, ROUTER_ADDRESS, SLIPPAGE, TOKEN_ADDRESS} from "../../../constants";
+import {CurrencyAmount, Ether, Token} from "@reservoir-labs/sdk-core";
+import {CHAINID, ROUTER_ADDRESS, SLIPPAGE, SWAP_RECIPIENT, TOKEN_ADDRESS} from "../../../constants";
 import {parseUnits} from "@ethersproject/units";
-import {calculateSlippageAmount} from "utils/math";
-import JSBI from "jsbi";
+import {AddressZero} from "@ethersproject/constants";
 
 export const AddLiq = () => {
     // wallet, provider, smart contract state
@@ -33,8 +32,8 @@ export const AddLiq = () => {
             to: ROUTER_ADDRESS,
             value: value,
             data: calldata
-        }
-        // enabled: (funcName != null && args != null)
+        },
+        enabled: calldata != null
     })
     const { sendTransaction } = useSendTransaction(config)
 
@@ -65,13 +64,24 @@ export const AddLiq = () => {
     })
 
     const handleTokenAChange = async (event) => {
-        const token = await Fetcher.fetchTokenData(CHAINID, TOKEN_ADDRESS[CHAINID][event.target.value], provider, event.target.value, event.target.value)
-        setTokenA(token)
+        const tokenAddress = TOKEN_ADDRESS[CHAINID][event.target.value]
+        if (tokenAddress === AddressZero) {
+            // token is native token
+            setTokenA(Ether.onChain(CHAINID))
+        } else {
+            const token = await Fetcher.fetchTokenData(CHAINID, tokenAddress, provider, event.target.value, event.target.value)
+            setTokenA(token)
+        }
     }
 
     const handleTokenBChange = async (event) => {
-        const token = await Fetcher.fetchTokenData(CHAINID, TOKEN_ADDRESS[CHAINID][event.target.value], provider, event.target.value, event.target.value)
-        setTokenB(token)
+        const tokenAddress = TOKEN_ADDRESS[CHAINID][event.target.value]
+        if (tokenAddress === AddressZero) {
+            setTokenB(Ether.onChain(CHAINID))
+        } else {
+            const token = await Fetcher.fetchTokenData(CHAINID, TOKEN_ADDRESS[CHAINID][event.target.value], provider, event.target.value, event.target.value)
+            setTokenB(token)
+        }
     }
 
     const tokenAAmtChanged = (value) => {
@@ -102,24 +112,24 @@ export const AddLiq = () => {
 
         let pair: Pair | null
         try {
-            pair = await Fetcher.fetchPairData(tokenA, tokenB, curveId, provider)
+            pair = await Fetcher.fetchPairData(tokenA.wrapped, tokenB.wrapped, curveId, provider)
             setCurrentPair(pair)
         } catch {
             pair = null
         }
 
         if (currentPair != null && lpTotalSupplyData != null) {
-            setPairTokenAReserves(currentPair.reserveOf(tokenA).toSignificant(6))
-            setPairTokenBReserves(currentPair.reserveOf(tokenB).toSignificant(6))
+            setPairTokenAReserves(currentPair.reserveOf(tokenA.wrapped).toSignificant(6))
+            setPairTokenBReserves(currentPair.reserveOf(tokenB.wrapped).toSignificant(6))
 
             const lpTotalSupply = CurrencyAmount.fromRawAmount(currentPair.liquidityToken, lpTotalSupplyData)
 
             if (tokenAAsQuote) {
                 // unsure if this is the best way or we can just use pair.token0/1Price()
-                const route: Route<Token, Token> = new Route([pair], tokenA, tokenB)
+                const route: Route<Token, Token> = new Route([pair], tokenA.wrapped, tokenB.wrapped)
                 const midPrice = route.midPrice
 
-                const tokenAQuoteAmt = CurrencyAmount.fromRawAmount(tokenA, parseUnits(tokenAAmt, tokenA.decimals).toString())
+                const tokenAQuoteAmt = CurrencyAmount.fromRawAmount(tokenA.wrapped, parseUnits(tokenAAmt, tokenA.decimals).toString())
                 const correspondingAmount = midPrice.quote(tokenAQuoteAmt)
                 setTokenBAmt(correspondingAmount.toSignificant(6))
 
@@ -127,10 +137,10 @@ export const AddLiq = () => {
                 setExpectedLpTokenAmt(mintedAmt.toExact())
             }
             else {
-                const route: Route<Token, Token> = new Route([currentPair], tokenB, tokenA)
+                const route: Route<Token, Token> = new Route([currentPair], tokenB.wrapped, tokenA.wrapped)
                 const midPrice = route.midPrice
 
-                const tokenBQuoteAmt = CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString())
+                const tokenBQuoteAmt = CurrencyAmount.fromRawAmount(tokenB.wrapped, parseUnits(tokenBAmt, tokenB.decimals).toString())
                 const correspondingAmount = midPrice.quote(tokenBQuoteAmt)
                 setTokenAAmt(correspondingAmount.toSignificant(6))
 
@@ -138,17 +148,14 @@ export const AddLiq = () => {
                 setExpectedLpTokenAmt(mintedAmt.toExact())
             }
 
+            // should we move this out?
             if (tokenAAmt !== '' && tokenBAmt !== '') {
-                const tokenARawAmt = parseUnits(tokenAAmt, tokenA.decimals).toString()
-                const tokenBRawAmt = parseUnits(tokenBAmt, tokenB.decimals).toString()
+                const tokenAAmtIn = CurrencyAmount.fromRawAmount(tokenA, parseUnits(tokenAAmt, tokenA.decimals).toString())
+                const tokenBAmtIn = CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString())
 
-                const tokenASlippageAmt = calculateSlippageAmount(JSBI.BigInt(tokenARawAmt), 100)  // 1%
-                const tokenBSlippageAmt = calculateSlippageAmount(JSBI.BigInt(tokenBRawAmt), 100)
-
-                console.log(tokenARawAmt)
-                console.log(tokenBRawAmt)
-
-                setCalldata(Router.addLiquidityParameters(tokenAAmt, tokenBAmt, curveId, SLIPPAGE))
+                const parameters: SwapParameters = Router.addLiquidityParameters(tokenAAmtIn, tokenBAmtIn, curveId, { allowedSlippage: SLIPPAGE, recipient: SWAP_RECIPIENT })
+                setCalldata(parameters.calldata)
+                setValue(parameters.value)
             }
         }
         else {
@@ -180,6 +187,7 @@ export const AddLiq = () => {
             <option value={'USDC'}>USDC</option>
             <option value={'USDT'}>USDT</option>
             <option value={'WAVAX'}>WAVAX</option>
+            <option value={'AVAX'}>AVAX</option>
         </Select>
 
         <NumberInput value={tokenAAmt} onChange={tokenAAmtChanged}>
@@ -191,6 +199,7 @@ export const AddLiq = () => {
             <option value={'USDC'}>USDC</option>
             <option value={'USDT'}>USDT</option>
             <option value={'WAVAX'}>WAVAX</option>
+            <option value={'AVAX'}>AVAX</option>
         </Select>
         <NumberInput value={tokenBAmt} onChange={ tokenBAmtChanged }>
             <NumberInputField placeholder={'Amount'} />
