@@ -18,7 +18,6 @@ import {parseUnits} from "@ethersproject/units";
 import {
     CHAINID,
     TOKEN_ADDRESS,
-    SWAP_RECIPIENT,
     ROUTER_ADDRESS,
     TOKEN_DECIMALS, SLIPPAGE
 } from "../../../constants";
@@ -136,7 +135,7 @@ const Home = () => {
         }
 
         if (trade) {
-            const swapParams: SwapParameters = Router.swapCallParameters(trade, { allowedSlippage: SLIPPAGE, recipient: SWAP_RECIPIENT })
+            const swapParams: SwapParameters = Router.swapCallParameters(trade, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
             setCalldata(swapParams.calldata)
             setValue(swapParams.value)
             setCurrentTrade(trade)

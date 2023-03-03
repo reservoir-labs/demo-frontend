@@ -17,7 +17,7 @@ import {
     useProvider
 } from "wagmi";
 import {CurrencyAmount, Ether, Token} from "@reservoir-labs/sdk-core";
-import {CHAINID, ROUTER_ADDRESS, SLIPPAGE, SWAP_RECIPIENT, TOKEN_ADDRESS} from "../../../constants";
+import {CHAINID, ROUTER_ADDRESS, SLIPPAGE, TOKEN_ADDRESS} from "../../../constants";
 import {parseUnits} from "@ethersproject/units";
 import {AddressZero} from "@ethersproject/constants";
 
@@ -153,7 +153,7 @@ export const AddLiq = () => {
                 const tokenAAmtIn = CurrencyAmount.fromRawAmount(tokenA, parseUnits(tokenAAmt, tokenA.decimals).toString())
                 const tokenBAmtIn = CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString())
 
-                const parameters: SwapParameters = Router.addLiquidityParameters(tokenAAmtIn, tokenBAmtIn, curveId, { allowedSlippage: SLIPPAGE, recipient: SWAP_RECIPIENT })
+                const parameters: SwapParameters = Router.addLiquidityParameters(tokenAAmtIn, tokenBAmtIn, curveId, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
                 setCalldata(parameters.calldata)
                 setValue(parameters.value)
             }

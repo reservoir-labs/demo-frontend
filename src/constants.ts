@@ -4,8 +4,8 @@ import {AddressZero} from "@ethersproject/constants";
 export const CHAINID = 43114
 export const TOKEN_ADDRESS = {
     43114: {
-        'USDC': '0x2B0d36FACD61B71CC05ab8F3D2355ec3631C0dd5',
-        'USDT': '0xfbC22278A96299D91d41C453234d97b4F5Eb9B2d',
+        'USDC': '0x5D60473C5Cb323032d6fdFf42380B50E2AE4d245',
+        'USDT': '0x6e9FDaE1Fe20b0A5a605C879Ae14030a0aE99cF9',
         'WAVAX': WETH9[43114].address,
         'AVAX': AddressZero
     }
@@ -20,8 +20,7 @@ export const TOKEN_DECIMALS = {
     }
 }
 export const SLIPPAGE = new Percent(1, 100) // 1%
-export const SWAP_RECIPIENT = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' // default anvil account
-export const ROUTER_ADDRESS = '0x7925565bb6a3e6094dc16740b3ac65bc3a53d3ec'
+export const ROUTER_ADDRESS = '0x7f05c63dc7ca3f99f2d3409f0017c28058c42b27'
 export const ROUTER_INTERFACE = [
     {
         "inputs": [
