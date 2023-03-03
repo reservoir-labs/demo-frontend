@@ -158,7 +158,23 @@ export const AddLiq = () => {
                 setValue(parameters.value)
             }
         }
+        // creating a new pair
         else {
+            let amountA, amountB
+            if (tokenAAmt !== '') {
+                amountA = CurrencyAmount.fromRawAmount(tokenA, parseUnits(tokenAAmt, tokenA.decimals).toString())
+            }
+            if (tokenBAmt !== '') {
+                amountB = CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString())
+            }
+
+            // slippage doesn't really matter in the case of creating a pair
+            // well, it's to guard against someone frontrunning your adding liq operation
+            const parameters: SwapParameters = Router.addLiquidityParameters(amountA, amountB, curveId, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
+
+            setCalldata(parameters.calldata)
+            setValue(parameters.value)
+
             setCurrentPair(null)
         }
     }
@@ -205,7 +221,7 @@ export const AddLiq = () => {
             <NumberInputField placeholder={'Amount'} />
         </NumberInput>
 
-        <Badge> Curve Type </Badge>
+        <Badge>Curve Type</Badge>
         <RadioGroup onChange={handleCurveChange}>
             <Radio value='0'>Constant Product</Radio>
             <Radio value='1'>Stable </Radio>
