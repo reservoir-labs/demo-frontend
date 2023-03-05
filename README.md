@@ -50,6 +50,7 @@ Notes to the frontend team:
    - the web3 frameworks to use 
    - the visual style to adopt
    - the way to use the react hooks and other react components
+   - the way to update the state
    - the coding styles of js / ts / tsx to adopt in the actual project
       - this frontend repo is done by an engineer who's not familiar with react at all XD  
 3. There may be bugs in the sdk implementation as well so please highlight / discuss with the team if anything feels wrong. 
@@ -61,17 +62,21 @@ Notes to the frontend team:
         - E.g. AVAX <=> WAVAX
     - Add Liq
       - Add liq to a pair that already exists
-        - One token involves a native token
+        - Involves a native token
         - Does not involve a native token
       - Add liq to a pair that doesn't already exist, creates the pair in the process
-        - One involves a native token
+        - Involves a native token
         - Does not involve a native token
     - Remove Liq
       - Removes liq from an existing pair 
-        - One token involves a native token
+        - Involves a native token
         - Does not involve a native token
 
 ## Things that may go wrong
 
-- if your transaction doesn't sign:  
+- Signed tx doesn't get mined:  
   - reset your account on metamask as the nonce on metamask might be different from what anvil has
+
+- Errors thrown in the console
+  - sometimes it is due to two states being updated at the same time, but the hook runs first. If data is valid, there should be no error shown in the "on-chain simulation error returns"
+  - so that should be the basis for your observation 

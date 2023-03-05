@@ -9,50 +9,57 @@ import {
 } from '@chakra-ui/react';
 import {Badge, OptionProps, Select} from "@web3uikit/core";
 import {Fetcher, Pair, Router, SwapParameters, Trade} from '@reservoir-labs/sdk'
-import {CurrencyAmount, Percent, Token, TradeType} from "@reservoir-labs/sdk-core";
+import {CurrencyAmount, Ether, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {useEffect} from "react";
 import {
-    useAccount, useBalance,
-    useContractWrite,
-    usePrepareContractWrite, useProvider,
+    useAccount, useBalance, usePrepareSendTransaction, useProvider, useSendTransaction,
 } from "wagmi";
 import {parseUnits} from "@ethersproject/units";
-import {CHAINID, TOKEN_ADDRESS, SWAP_RECIPIENT, ROUTER_ADDRESS, ROUTER_INTERFACE} from "../../../constants";
+import {
+    CHAINID,
+    TOKEN_ADDRESS,
+    ROUTER_ADDRESS,
+    TOKEN_DECIMALS, SLIPPAGE
+} from "../../../constants";
+import {AddressZero} from "@ethersproject/constants";
 
-const tokenSelectOptions: OptionProps[] = [{label: 'USDC', id: 'USDC'}, {label:'WAVAX', id: 'WAVAX'}, {label: 'USDT', id: 'USDT'}]
-
-const SLIPPAGE = new Percent(1, 100) // 1%
+const tokenSelectOptions: OptionProps[] = [
+    {label: 'USDC', id: 'USDC'},
+    {label: 'WAVAX', id: 'WAVAX'},
+    {label: 'AVAX', id: 'AVAX'},
+    {label: 'USDT', id: 'USDT'}
+]
 
 const Home = () => {
   // wallet, provider, smart contract state
   const provider = useProvider()
   const { address: connectedAddress } = useAccount()
-
-  const [funcName, setFuncName] = useControllableState({defaultValue: null})
-  const [args, setArgs] = useControllableState({defaultValue: null})
-  const { config, error } = usePrepareContractWrite({
-    address: ROUTER_ADDRESS,
-    abi: ROUTER_INTERFACE,
-    functionName: funcName,
-    args: args,
+  const [calldata, setCalldata] = useControllableState({defaultValue: null})
+  const [value, setValue] = useControllableState({defaultValue: null})
+  const { config, error } = usePrepareSendTransaction({
+    request: {
+        to: ROUTER_ADDRESS,
+        value: value,
+        data: calldata
+    },
     // this flag may not be necessary
-    enabled: (funcName != null && args != null)
+    enabled: calldata != null
   })
-  const { isLoading, write } = useContractWrite(config)
+  const { isLoading, sendTransaction } = useSendTransaction(config)
 
   // page state
   const [fromToken, setFromToken] = useControllableState({defaultValue: null})
   const [toToken, setToToken] = useControllableState({defaultValue: null})
 
   const { data: fromTokenBal } = useBalance({
-      token: TOKEN_ADDRESS[CHAINID][fromToken?.id],
+      token: TOKEN_ADDRESS[CHAINID][fromToken?.id] === AddressZero ? null : TOKEN_ADDRESS[CHAINID][fromToken?.id],
       chainId: CHAINID,
       address: connectedAddress,
       enabled: (connectedAddress != null && fromToken != null),
       watch: true
   })
   const { data: toTokenBal } = useBalance({
-      token: TOKEN_ADDRESS[CHAINID][toToken?.id],
+      token: TOKEN_ADDRESS[CHAINID][toToken?.id] === AddressZero ? null : TOKEN_ADDRESS[CHAINID][toToken?.id],
       chainId: CHAINID,
       address: connectedAddress,
       enabled: (connectedAddress != null && toToken != null),
@@ -80,55 +87,62 @@ const Home = () => {
         return
     }
 
-    const from = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], TOKEN_DECIMALS[CHAINID][fromToken.id])
-    const to = new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], TOKEN_DECIMALS[CHAINID][toToken.id])
+    const from = TOKEN_ADDRESS[CHAINID][fromToken.id] === AddressZero
+        ? Ether.onChain(CHAINID)
+        : new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], TOKEN_DECIMALS[CHAINID][fromToken.id])
+    const to = TOKEN_ADDRESS[CHAINID][toToken.id] === AddressZero
+        ? Ether.onChain(CHAINID)
+        : new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], TOKEN_DECIMALS[CHAINID][toToken.id])
 
     const relevantPairs: Pair[] = await Fetcher.fetchRelevantPairs(
       CHAINID,
-      from,
-      to,
+      from.wrapped,
+      to.wrapped,
       provider
     )
+    console.log("rel p", relevantPairs)
 
     let trade
+    if (relevantPairs.length > 0) {
+        if (swapType === TradeType.EXACT_INPUT) {
+            const trades: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
+                relevantPairs,
+                // what's the best way to multiply the entered amount with the decimals?
+                CurrencyAmount.fromRawAmount(from, parseUnits(fromAmount.toString(), from.decimals).toString()),
+                to,
+                { maxNumResults: 3, maxHops: 2},
+            )
+            console.log("trades", trades)
+            if (trades.length > 0) {
+                setToAmount(trades[0].outputAmount.toExact())
+                setValueAfterSlippage(trades[0].minimumAmountOut(SLIPPAGE))
+                trade = trades[0]
+            }
+        }
+        else if (swapType === TradeType.EXACT_OUTPUT) {
+            const trades: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
+                relevantPairs,
+                from,
+                CurrencyAmount.fromRawAmount(to, parseUnits(toAmount.toString(), to.decimals).toString()),
+                { maxNumResults: 3, maxHops: 2},
+            )
 
-    if (swapType === TradeType.EXACT_INPUT) {
-        const trades: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
-            relevantPairs,
-            // what's the best way to multiply the entered amount with the decimals?
-            CurrencyAmount.fromRawAmount(from, parseUnits(fromAmount.toString(), from.decimals).toString()),
-            to,
-            { maxNumResults: 3, maxHops: 2},
-        )
+            if (trades.length > 0) {
+                setFromAmount(trades[0].inputAmount.toExact())
+                setValueAfterSlippage(trades[0].maximumAmountIn(SLIPPAGE))
+                trade = trades[0]
+            }
+        }
 
-        if (trades.length > 0) {
-            setToAmount(trades[0].outputAmount.toExact())
-            setValueAfterSlippage(trades[0].minimumAmountOut(SLIPPAGE))
-            trade = trades[0]
+        if (trade) {
+            const swapParams: SwapParameters = Router.swapCallParameters(trade, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
+            setCalldata(swapParams.calldata)
+            setValue(swapParams.value)
+            setCurrentTrade(trade)
         }
     }
-    else if (swapType === TradeType.EXACT_OUTPUT) {
-        const trades: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
-            relevantPairs,
-            from,
-            // what's the best way to multiply the entered amount with the decimals
-            CurrencyAmount.fromRawAmount(to, parseUnits( toAmount.toString(), to.decimals).toString()),
-            { maxNumResults: 3, maxHops: 2},
-        )
-
-        if (trades.length > 0) {
-            setFromAmount(trades[0].inputAmount.toExact())
-            setValueAfterSlippage(trades[0].maximumAmountIn(SLIPPAGE))
-            trade = trades[0]
-        }
-    }
-
-    if (trade) {
-        const swapParams: SwapParameters = Router.swapCallParameters(trade, { allowedSlippage: SLIPPAGE, recipient: SWAP_RECIPIENT })
-
-        setFuncName(swapParams.methodName)
-        setArgs(swapParams.args)
-        setCurrentTrade(trade)
+    else {
+        setCurrentTrade(null)
     }
   }
 
@@ -151,11 +165,11 @@ const Home = () => {
   }
 
   const doSwap = () => {
-    if (funcName === null || args === null || write == null) {
+    if (calldata === null || sendTransaction == null) {
         return
     }
 
-    write()
+    sendTransaction()
   }
 
   useEffect(() => {
@@ -183,7 +197,7 @@ const Home = () => {
       </Container>
 
       <Text> { swapType === TradeType.EXACT_INPUT ? 'Min amount out' : 'Max amt in' }  { valueAfterSlippage?.toExact() } </Text>
-      <Text> { currentTrade ? `This swap goes through curveId ${currentTrade.route.pairs[0].curveId}` : '' } </Text>
+      <Text> { currentTrade ? `This swap goes through curveId ${currentTrade.route.pairs[0].curveId}` : 'no route for trade' } </Text>
       <Button isLoading={isLoading} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>

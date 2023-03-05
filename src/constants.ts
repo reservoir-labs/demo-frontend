@@ -1,9 +1,13 @@
+import {Percent, WETH9} from "@reservoir-labs/sdk-core";
+import {AddressZero} from "@ethersproject/constants";
+
 export const CHAINID = 43114
 export const TOKEN_ADDRESS = {
     43114: {
-        'USDC': '0x2B0d36FACD61B71CC05ab8F3D2355ec3631C0dd5',
-        'USDT': '0xfbC22278A96299D91d41C453234d97b4F5Eb9B2d',
-        'WAVAX': '0x46b142DD1E924FAb83eCc3c08e4D46E82f005e0E'
+        'USDC': '0x5D60473C5Cb323032d6fdFf42380B50E2AE4d245',
+        'USDT': '0x6e9FDaE1Fe20b0A5a605C879Ae14030a0aE99cF9',
+        'WAVAX': WETH9[43114].address,
+        'AVAX': AddressZero
     }
 }
 
@@ -11,11 +15,12 @@ export const TOKEN_DECIMALS = {
     43114: {
         'USDC': 6,
         'USDT': 6,
-        'WAVAX': 18
+        'WAVAX': 18,
+        'AVAX': 18
     }
 }
-export const SWAP_RECIPIENT = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' // default anvil account
-export const ROUTER_ADDRESS = '0xdf838f41f3e0d5c0d56112d7d22e5466526c0baa'
+export const SLIPPAGE = new Percent(1, 100) // 1%
+export const ROUTER_ADDRESS = '0x7f05c63dc7ca3f99f2d3409f0017c28058c42b27'
 export const ROUTER_INTERFACE = [
     {
         "inputs": [

@@ -3,13 +3,13 @@ import {
     useAccount,
     useBalance,
     useContractRead,
-    useContractWrite,
-    usePrepareContractWrite,
+    useSendTransaction,
+    usePrepareSendTransaction,
     useProvider
 } from "wagmi";
 import {
     Badge,
-    Button,
+    Button, Checkbox,
     Heading, Input,
     NumberInput,
     NumberInputField, Radio, RadioGroup,
@@ -17,26 +17,25 @@ import {
     Text,
     useControllableState
 } from "@chakra-ui/react";
-import {CHAINID, ROUTER_ADDRESS, ROUTER_INTERFACE} from "../../../constants";
+import {CHAINID, ROUTER_ADDRESS} from "../../../constants";
 import {useEffect} from "react";
-import {Fetcher} from "@reservoir-labs/sdk";
-import {calculateSlippageAmount} from "../../../utils";
-import {CurrencyAmount} from "@reservoir-labs/sdk-core";
+import {Fetcher, Router, FEE_ACCURACY} from "@reservoir-labs/sdk";
+import {CurrencyAmount, Ether, Percent, WETH9} from "@reservoir-labs/sdk-core";
 import {parseUnits} from "@ethersproject/units";
-import JSBI from "jsbi";
 
 export const RemoveLiq = () => {
     const provider = useProvider()
     const { address: connectedAddress } = useAccount()
-    const [args, setArgs] = useControllableState({defaultValue: null})
-    const { config, error } = usePrepareContractWrite({
-        address: ROUTER_ADDRESS,
-        abi: ROUTER_INTERFACE,
-        functionName: "removeLiquidity",
-        args: args,
-        enabled: args != null
+    const [calldata, setCalldata] = useControllableState({defaultValue: null})
+    const { config, error } = usePrepareSendTransaction({
+        request: {
+            to: ROUTER_ADDRESS,
+            value: 0,
+            data: calldata
+        },
+        enabled: calldata != null
     })
-    const { isLoading, write } = useContractWrite(config)
+    const { isLoading, sendTransaction } = useSendTransaction(config)
 
     // app state
     const [allPairs, setAllPairs] = useControllableState({defaultValue: null})
@@ -56,6 +55,7 @@ export const RemoveLiq = () => {
 
     const [tokenAAmt, setTokenAAmt] = useControllableState({defaultValue: ''})
     const [tokenBAmt, setTokenBAmt] = useControllableState({defaultValue: ''})
+    const [unwrap, setUnwrap] = useControllableState({defaultValue: null})
 
     const calc = () => {
         if (pair === null || redeemAmountInput === null) {
@@ -65,31 +65,43 @@ export const RemoveLiq = () => {
         const totalSupply = CurrencyAmount.fromRawAmount(pair.liquidityToken, lpTotalSupply)
         const redeemAmount = CurrencyAmount.fromRawAmount(pair.liquidityToken, parseUnits(redeemAmountInput, pair.liquidityToken.decimals).toString())
 
-        const token0Amt = pair.getLiquidityValue(pair.token0, totalSupply, redeemAmount)
-        const token1Amt = pair.getLiquidityValue(pair.token1, totalSupply, redeemAmount)
+        let token0Amt = pair.getLiquidityValue(pair.token0, totalSupply, redeemAmount)
+        let token1Amt = pair.getLiquidityValue(pair.token1, totalSupply, redeemAmount)
 
-        const token0SlippageAmt = calculateSlippageAmount(JSBI.BigInt(parseUnits(token0Amt.toExact(), pair.token0.decimals).toString()), 100)[0]
-        const token1SlippageAmt = calculateSlippageAmount(JSBI.BigInt(parseUnits(token1Amt.toExact(), pair.token1.decimals).toString()), 100)[0]
+        // N.B if the user wants to unwrap the wrapped native token
+        // we need to pass in the native currency (amount) to the sdk encoding function
+        if (unwrap) {
+            if (token0Amt.currency.address === WETH9[CHAINID].address) {
+                token0Amt = CurrencyAmount.fromRawAmount(Ether.onChain(CHAINID), token0Amt.quotient)
+            }
+            if (token1Amt.currency.address === WETH9[CHAINID].address) {
+                token1Amt = CurrencyAmount.fromRawAmount(Ether.onChain(CHAINID), token1Amt.quotient)
+            }
+        }
 
         setTokenAAmt(token0Amt.toExact())
         setTokenBAmt(token1Amt.toExact())
 
-        setArgs([
-            pair.token0.address,
-            pair.token1.address,
-            pair.curveId,
-            redeemAmount.quotient.toString(),
-            token0SlippageAmt.toString(),
-            token1SlippageAmt.toString(),
-            connectedAddress
-        ])
+        // N.B it is important for the frontend to validate that the pair as selected by the user exists
+        // as the sdk function does not perform this check
+        // if invalid tokenA/B is provided the call will revert
+        // this is unlikely to happen if we use getLiquidityValue
+        const parameters = Router.removeLiquidityParameters(token0Amt, token1Amt, pair.curveId, redeemAmount.quotient, { allowedSlippage: new Percent(pair.swapFee, FEE_ACCURACY) , recipient: connectedAddress })
+
+        setCalldata(parameters.calldata)
     }
 
+    const handleCheckbox = (e) => {
+        if (e) {
+            setUnwrap(e.target.checked)
+        }
+    }
     const doRemoveLiq = () => {
-        if (args == null) {
+        if (calldata == null || sendTransaction == null) {
             return
         }
-        write()
+        sendTransaction()
+        // console.log(calldata)
     }
 
     const selectPair = (pairAddress) => {
@@ -114,7 +126,7 @@ export const RemoveLiq = () => {
         fetchPairs()
     }, [])
 
-    useEffect(calc, [redeemAmountInput, pair])
+    useEffect(calc, [redeemAmountInput, pair, unwrap])
 
     return (
         <>
@@ -138,11 +150,12 @@ export const RemoveLiq = () => {
             <Spacer height={'20px'} />
 
             <Text>You will obtain the following tokens if you remove liq</Text>
-            <Badge>TokenA</Badge>
+            <Badge>TokenA { pair?.token0.symbol } </Badge>
             <Input isReadOnly={true} value={tokenAAmt} />
-            <Badge>TokenB</Badge>
+            { pair?.token0.address == WETH9[CHAINID].address ? <Checkbox onChange={handleCheckbox}>Unwrap WAVAX</Checkbox> : null }
+            <Badge>TokenB { pair?.token1.symbol }</Badge>
             <Input isReadOnly={true} value={tokenBAmt} />
-
+            { pair?.token1.address == WETH9[CHAINID].address ? <Checkbox onChange={handleCheckbox}>Unwrap WAVAX</Checkbox> : null }
             <Button isLoading={isLoading} onClick={doRemoveLiq} colorScheme='green'>Remove Liquidity</Button>
 
             <Text maxWidth={'100%'}>On-chain simulation returns {error?.message} </Text>
