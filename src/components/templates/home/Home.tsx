@@ -8,11 +8,16 @@ import {
     VStack
 } from '@chakra-ui/react';
 import {Badge, OptionProps, Select} from "@web3uikit/core";
-import {Fetcher, Pair, Router, SwapParameters, Trade} from '@reservoir-labs/sdk'
-import {CurrencyAmount, Ether, Token, TradeType} from "@reservoir-labs/sdk-core";
+import {Fetcher, Pair, Router, MethodParameters, Trade, PermitOptions} from '@reservoir-labs/sdk'
+import {CurrencyAmount, Ether, Token, TradeType, } from "@reservoir-labs/sdk-core";
 import {useEffect} from "react";
 import {
-    useAccount, useBalance, usePrepareSendTransaction, useProvider, useSendTransaction,
+    useAccount,
+    useBalance,
+    usePrepareSendTransaction,
+    useProvider,
+    useSendTransaction,
+    useSignTypedData,
 } from "wagmi";
 import {parseUnits} from "@ethersproject/units";
 import {
@@ -21,7 +26,10 @@ import {
     ROUTER_ADDRESS,
     TOKEN_DECIMALS, SLIPPAGE
 } from "../../../constants";
-import {AddressZero} from "@ethersproject/constants";
+import {AddressZero, MaxUint256} from "@ethersproject/constants";
+import {BigNumber} from "@ethersproject/bignumber";
+import {splitSignature} from "ethers/lib/utils";
+import {Signature} from "ethers";
 
 const tokenSelectOptions: OptionProps[] = [
     {label: 'USDC', id: 'USDC'},
@@ -72,6 +80,37 @@ const Home = () => {
   const [swapType, setSwapType] = useControllableState({defaultValue: null})
   const [currentTrade, setCurrentTrade] = useControllableState({defaultValue: null})
 
+  // ERC-2616 permit data
+  // N.B in this example only the standard ERC-2616 approval is implemented
+  // in the production frontend we should implement the DAI style permit messages as well
+  const domain = {
+      chainId: CHAINID,
+      name: 'USD Circle',
+      version: '1',
+      verifyingContract: TOKEN_ADDRESS[CHAINID]['USDC']
+  } as const
+  const dataTypes = {
+    Permit : [
+      { name: 'owner',      type: 'address' },
+      { name: 'spender',    type: 'address' },
+      { name: 'value',      type: 'uint256' },
+      { name: 'nonce',      type: 'uint256' },
+      { name: 'deadline',   type: 'uint256' }
+    ]
+  } as const
+  const permitValues = {
+      owner: connectedAddress,
+      spender: ROUTER_ADDRESS,
+      value: MaxUint256,
+      nonce: BigNumber.from(0),
+      deadline: BigNumber.from( 2678083692)
+  }
+  const { data: permitData, signTypedData } = useSignTypedData({
+    domain: domain,
+    types: dataTypes,
+    value: permitValues,
+  })
+
   const _handleQuoteChange = async () => {
     if (fromToken === null || toToken === null) {
         return
@@ -105,7 +144,7 @@ const Home = () => {
     let trade
     if (relevantPairs.length > 0) {
         if (swapType === TradeType.EXACT_INPUT) {
-            const trades: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
+            const trades = Trade.bestTradeExactIn(
                 relevantPairs,
                 // what's the best way to multiply the entered amount with the decimals?
                 CurrencyAmount.fromRawAmount(from, parseUnits(fromAmount.toString(), from.decimals).toString()),
@@ -120,7 +159,7 @@ const Home = () => {
             }
         }
         else if (swapType === TradeType.EXACT_OUTPUT) {
-            const trades: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
+            const trades = Trade.bestTradeExactOut(
                 relevantPairs,
                 from,
                 CurrencyAmount.fromRawAmount(to, parseUnits(toAmount.toString(), to.decimals).toString()),
@@ -135,7 +174,24 @@ const Home = () => {
         }
 
         if (trade) {
-            const swapParams: SwapParameters = Router.swapCallParameters(trade, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
+            let permitOptions: PermitOptions
+            if (permitData) {
+                const sigComponents: Signature = splitSignature(permitData)
+
+                permitOptions = {
+                  v: sigComponents.v,
+                  r: sigComponents.r,
+                  s: sigComponents.s,
+                  amount: MaxUint256.toString(),
+                  deadline: '2678083692',
+                }
+            }
+
+            const swapParams: MethodParameters = Router.swapCallParameters(
+                trade,
+                { allowedSlippage: SLIPPAGE, recipient: connectedAddress },
+                permitOptions
+            )
             setCalldata(swapParams.calldata)
             setValue(swapParams.value)
             setCurrentTrade(trade)
@@ -164,6 +220,10 @@ const Home = () => {
     setToAmount(valNum)
   }
 
+  const signPermit = () => {
+
+    signTypedData()
+  }
   const doSwap = () => {
     if (calldata === null || sendTransaction == null) {
         return
@@ -201,6 +261,9 @@ const Home = () => {
       <Button isLoading={isLoading} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
+
+      <Button onClick={signPermit}>Sign permit</Button>
+      <Text maxWidth={'100%'}>Permit signature is { permitData } </Text>
     </VStack>
   );
 };

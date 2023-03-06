@@ -5,7 +5,7 @@ import {
     NumberInputField, Radio, RadioGroup,
     Select, Spacer, Stat, StatGroup, StatLabel, StatNumber, useControllableState, Text, Button
 } from "@chakra-ui/react";
-import {Fetcher, Pair, Route, Router, SwapParameters} from "@reservoir-labs/sdk";
+import {Fetcher, Pair, Route, Router, MethodParameters} from "@reservoir-labs/sdk";
 import {useEffect} from "react";
 import {
     erc20ABI,
@@ -153,7 +153,7 @@ export const AddLiq = () => {
                 const tokenAAmtIn = CurrencyAmount.fromRawAmount(tokenA, parseUnits(tokenAAmt, tokenA.decimals).toString())
                 const tokenBAmtIn = CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString())
 
-                const parameters: SwapParameters = Router.addLiquidityParameters(tokenAAmtIn, tokenBAmtIn, curveId, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
+                const parameters: MethodParameters = Router.addLiquidityParameters(tokenAAmtIn, tokenBAmtIn, curveId, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
                 setCalldata(parameters.calldata)
                 setValue(parameters.value)
             }
@@ -170,7 +170,7 @@ export const AddLiq = () => {
 
             // slippage doesn't really matter in the case of creating a pair
             // well, it's to guard against someone frontrunning your adding liq operation
-            const parameters: SwapParameters = Router.addLiquidityParameters(amountA, amountB, curveId, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
+            const parameters: MethodParameters = Router.addLiquidityParameters(amountA, amountB, curveId, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
 
             setCalldata(parameters.calldata)
             setValue(parameters.value)
