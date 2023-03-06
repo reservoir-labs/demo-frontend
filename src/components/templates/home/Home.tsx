@@ -1,5 +1,5 @@
 import {
-    Button, ButtonSpinner,
+    Button,
     Container,
     Heading,
     NumberInput,
@@ -8,8 +8,8 @@ import {
     VStack
 } from '@chakra-ui/react';
 import {Badge, OptionProps, Select} from "@web3uikit/core";
-import {Fetcher, Pair, Router, MethodParameters, Trade} from '@reservoir-labs/sdk'
-import {CurrencyAmount, Ether, Token, TradeType} from "@reservoir-labs/sdk-core";
+import {Fetcher, Pair, Router, MethodParameters, Trade, PermitOptions} from '@reservoir-labs/sdk'
+import {CurrencyAmount, Ether, Token, TradeType, } from "@reservoir-labs/sdk-core";
 import {useEffect} from "react";
 import {
     useAccount,
@@ -28,6 +28,8 @@ import {
 } from "../../../constants";
 import {AddressZero, MaxUint256} from "@ethersproject/constants";
 import {BigNumber} from "@ethersproject/bignumber";
+import {splitSignature} from "ethers/lib/utils";
+import {Signature} from "ethers";
 
 const tokenSelectOptions: OptionProps[] = [
     {label: 'USDC', id: 'USDC'},
@@ -79,6 +81,8 @@ const Home = () => {
   const [currentTrade, setCurrentTrade] = useControllableState({defaultValue: null})
 
   // ERC-2616 permit data
+  // N.B in this example only the standard ERC-2616 approval is implemented
+  // in the production frontend we should implement the DAI style permit messages as well
   const domain = {
       chainId: CHAINID,
       name: 'USD Circle',
@@ -101,7 +105,7 @@ const Home = () => {
       nonce: BigNumber.from(0),
       deadline: BigNumber.from( 2678083692)
   }
-  const { data: signMsgData, signTypedData } = useSignTypedData({
+  const { data: permitData, signTypedData } = useSignTypedData({
     domain: domain,
     types: dataTypes,
     value: permitValues,
@@ -170,7 +174,24 @@ const Home = () => {
         }
 
         if (trade) {
-            const swapParams: MethodParameters = Router.swapCallParameters(trade, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
+            let permitOptions: PermitOptions
+            if (permitData) {
+                const sigComponents: Signature = splitSignature(permitData)
+
+                permitOptions = {
+                  v: sigComponents.v,
+                  r: sigComponents.r,
+                  s: sigComponents.s,
+                  amount: MaxUint256.toString(),
+                  deadline: '2678083692',
+                }
+            }
+
+            const swapParams: MethodParameters = Router.swapCallParameters(
+                trade,
+                { allowedSlippage: SLIPPAGE, recipient: connectedAddress },
+                permitOptions
+            )
             setCalldata(swapParams.calldata)
             setValue(swapParams.value)
             setCurrentTrade(trade)
@@ -202,9 +223,6 @@ const Home = () => {
   const signPermit = () => {
 
     signTypedData()
-    console.log(signMsgData)
-
-    // SelfPermit.encodePermit()
   }
   const doSwap = () => {
     if (calldata === null || sendTransaction == null) {
@@ -245,7 +263,7 @@ const Home = () => {
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
 
       <Button onClick={signPermit}>Sign permit</Button>
-      <Text maxWidth={'100%'}>Permit signature is { signMsgData } </Text>
+      <Text maxWidth={'100%'}>Permit signature is { permitData } </Text>
     </VStack>
   );
 };
