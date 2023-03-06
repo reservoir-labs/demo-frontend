@@ -19,7 +19,7 @@ import {
 } from "@chakra-ui/react";
 import {CHAINID, ROUTER_ADDRESS} from "../../../constants";
 import {useEffect} from "react";
-import {Fetcher, Router, FEE_ACCURACY} from "@reservoir-labs/sdk";
+import {Fetcher, Router, FEE_ACCURACY, MethodParameters} from "@reservoir-labs/sdk";
 import {CurrencyAmount, Ether, Percent, WETH9} from "@reservoir-labs/sdk-core";
 import {parseUnits} from "@ethersproject/units";
 
@@ -86,7 +86,7 @@ export const RemoveLiq = () => {
         // as the sdk function does not perform this check
         // if invalid tokenA/B is provided the call will revert
         // this is unlikely to happen if we use getLiquidityValue
-        const parameters = Router.removeLiquidityParameters(token0Amt, token1Amt, pair.curveId, redeemAmount.quotient, { allowedSlippage: new Percent(pair.swapFee, FEE_ACCURACY) , recipient: connectedAddress })
+        const parameters: MethodParameters = Router.removeLiquidityParameters(token0Amt, token1Amt, pair.curveId, redeemAmount.quotient, { allowedSlippage: new Percent(pair.swapFee, FEE_ACCURACY) , recipient: connectedAddress })
 
         setCalldata(parameters.calldata)
     }

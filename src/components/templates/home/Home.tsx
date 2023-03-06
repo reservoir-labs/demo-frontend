@@ -8,7 +8,7 @@ import {
     VStack
 } from '@chakra-ui/react';
 import {Badge, OptionProps, Select} from "@web3uikit/core";
-import {Fetcher, Pair, Router, SwapParameters, Trade} from '@reservoir-labs/sdk'
+import {Fetcher, Pair, Router, MethodParameters, Trade} from '@reservoir-labs/sdk'
 import {CurrencyAmount, Ether, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {useEffect} from "react";
 import {
@@ -87,15 +87,15 @@ const Home = () => {
   } as const
   const dataTypes = {
     Permit : [
-      { name: 'owner', type: 'address' },
-      { name: 'spender', type: 'address' },
-      { name: 'value', type: 'uint256' },
-      { name: 'nonce', type: 'uint256' },
-      { name: 'deadline', type: 'uint256' }
+      { name: 'owner',      type: 'address' },
+      { name: 'spender',    type: 'address' },
+      { name: 'value',      type: 'uint256' },
+      { name: 'nonce',      type: 'uint256' },
+      { name: 'deadline',   type: 'uint256' }
     ]
   } as const
   const permitValues = {
-      owner: connectedAddress!,
+      owner: connectedAddress,
       spender: ROUTER_ADDRESS,
       value: MaxUint256,
       nonce: BigNumber.from(0),
@@ -106,6 +106,7 @@ const Home = () => {
     types: dataTypes,
     value: permitValues,
   })
+
   const _handleQuoteChange = async () => {
     if (fromToken === null || toToken === null) {
         return
@@ -169,7 +170,7 @@ const Home = () => {
         }
 
         if (trade) {
-            const swapParams: SwapParameters = Router.swapCallParameters(trade, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
+            const swapParams: MethodParameters = Router.swapCallParameters(trade, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
             setCalldata(swapParams.calldata)
             setValue(swapParams.value)
             setCurrentTrade(trade)
@@ -240,9 +241,11 @@ const Home = () => {
       <Text> { swapType === TradeType.EXACT_INPUT ? 'Min amount out' : 'Max amt in' }  { valueAfterSlippage?.toExact() } </Text>
       <Text> { currentTrade ? `This swap goes through curveId ${currentTrade.route.pairs[0].curveId}` : 'no route for trade' } </Text>
       <Button isLoading={isLoading} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
-      <Button onClick={signPermit}>Sign permit</Button>
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
+
+      <Button onClick={signPermit}>Sign permit</Button>
+      <Text maxWidth={'100%'}>Permit signature is { signMsgData } </Text>
     </VStack>
   );
 };
