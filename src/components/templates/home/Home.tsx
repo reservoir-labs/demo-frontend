@@ -1,5 +1,5 @@
 import {
-    Button,
+    Button, ButtonSpinner,
     Container,
     Heading,
     NumberInput,
@@ -12,7 +12,12 @@ import {Fetcher, Pair, Router, SwapParameters, Trade} from '@reservoir-labs/sdk'
 import {CurrencyAmount, Ether, Token, TradeType} from "@reservoir-labs/sdk-core";
 import {useEffect} from "react";
 import {
-    useAccount, useBalance, usePrepareSendTransaction, useProvider, useSendTransaction,
+    useAccount,
+    useBalance,
+    usePrepareSendTransaction,
+    useProvider,
+    useSendTransaction,
+    useSignTypedData,
 } from "wagmi";
 import {parseUnits} from "@ethersproject/units";
 import {
@@ -21,7 +26,8 @@ import {
     ROUTER_ADDRESS,
     TOKEN_DECIMALS, SLIPPAGE
 } from "../../../constants";
-import {AddressZero} from "@ethersproject/constants";
+import {AddressZero, MaxUint256} from "@ethersproject/constants";
+import {BigNumber} from "@ethersproject/bignumber";
 
 const tokenSelectOptions: OptionProps[] = [
     {label: 'USDC', id: 'USDC'},
@@ -72,6 +78,34 @@ const Home = () => {
   const [swapType, setSwapType] = useControllableState({defaultValue: null})
   const [currentTrade, setCurrentTrade] = useControllableState({defaultValue: null})
 
+  // ERC-2616 permit data
+  const domain = {
+      chainId: CHAINID,
+      name: 'USD Circle',
+      version: '1',
+      verifyingContract: TOKEN_ADDRESS[CHAINID]['USDC']
+  } as const
+  const dataTypes = {
+    Permit : [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+      { name: 'value', type: 'uint256' },
+      { name: 'nonce', type: 'uint256' },
+      { name: 'deadline', type: 'uint256' }
+    ]
+  } as const
+  const permitValues = {
+      owner: connectedAddress!,
+      spender: ROUTER_ADDRESS,
+      value: MaxUint256,
+      nonce: BigNumber.from(0),
+      deadline: BigNumber.from( 2678083692)
+  }
+  const { data: signMsgData, signTypedData } = useSignTypedData({
+    domain: domain,
+    types: dataTypes,
+    value: permitValues,
+  })
   const _handleQuoteChange = async () => {
     if (fromToken === null || toToken === null) {
         return
@@ -105,7 +139,7 @@ const Home = () => {
     let trade
     if (relevantPairs.length > 0) {
         if (swapType === TradeType.EXACT_INPUT) {
-            const trades: Trade<Token, Token, TradeType.EXACT_INPUT>[] = Trade.bestTradeExactIn(
+            const trades = Trade.bestTradeExactIn(
                 relevantPairs,
                 // what's the best way to multiply the entered amount with the decimals?
                 CurrencyAmount.fromRawAmount(from, parseUnits(fromAmount.toString(), from.decimals).toString()),
@@ -120,7 +154,7 @@ const Home = () => {
             }
         }
         else if (swapType === TradeType.EXACT_OUTPUT) {
-            const trades: Trade<Token, Token, TradeType.EXACT_OUTPUT>[] = Trade.bestTradeExactOut(
+            const trades = Trade.bestTradeExactOut(
                 relevantPairs,
                 from,
                 CurrencyAmount.fromRawAmount(to, parseUnits(toAmount.toString(), to.decimals).toString()),
@@ -164,6 +198,13 @@ const Home = () => {
     setToAmount(valNum)
   }
 
+  const signPermit = () => {
+
+    signTypedData()
+    console.log(signMsgData)
+
+    // SelfPermit.encodePermit()
+  }
   const doSwap = () => {
     if (calldata === null || sendTransaction == null) {
         return
@@ -199,6 +240,7 @@ const Home = () => {
       <Text> { swapType === TradeType.EXACT_INPUT ? 'Min amount out' : 'Max amt in' }  { valueAfterSlippage?.toExact() } </Text>
       <Text> { currentTrade ? `This swap goes through curveId ${currentTrade.route.pairs[0].curveId}` : 'no route for trade' } </Text>
       <Button isLoading={isLoading} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
+      <Button onClick={signPermit}>Sign permit</Button>
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
     </VStack>
