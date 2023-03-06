@@ -86,7 +86,7 @@ export const RemoveLiq = () => {
         // as the sdk function does not perform this check
         // if invalid tokenA/B is provided the call will revert
         // this is unlikely to happen if we use getLiquidityValue
-        const parameters: MethodParameters = Router.removeLiquidityParameters(token0Amt, token1Amt, pair.curveId, redeemAmount.quotient, { allowedSlippage: new Percent(pair.swapFee, FEE_ACCURACY) , recipient: connectedAddress })
+        const parameters: MethodParameters = Router.removeLiquidityParameters(token0Amt, token1Amt, pair.curveId, redeemAmount, { allowedSlippage: new Percent(pair.swapFee, FEE_ACCURACY) , recipient: connectedAddress })
 
         setCalldata(parameters.calldata)
     }
