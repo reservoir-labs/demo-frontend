@@ -102,6 +102,7 @@ const Home = () => {
       owner: connectedAddress,
       spender: ROUTER_ADDRESS,
       value: MaxUint256,
+      // to read from chain in production
       nonce: BigNumber.from(0),
       deadline: BigNumber.from( 2678083692)
   }
