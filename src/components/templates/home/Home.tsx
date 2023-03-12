@@ -258,7 +258,7 @@ const Home = () => {
       </Container>
 
       <Text> { swapType === TradeType.EXACT_INPUT ? 'Min amount out' : 'Max amt in' }  { valueAfterSlippage?.toExact() } </Text>
-      <Text> { currentTrade ? `This swap goes through curveId ${currentTrade.route.pairs[0].curveId}` : 'no route for trade' } </Text>
+      <Text> { currentTrade ? `This swap goes through curveId(s) ${currentTrade.route.pairs.map(pair => pair.curveId) }` : 'no route for trade' } </Text>
       <Button isLoading={isLoading} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
