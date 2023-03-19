@@ -154,9 +154,10 @@ const Home = () => {
             )
             console.log("trades", trades)
             if (trades.length > 0) {
-                setToAmount(trades[0].outputAmount.toExact())
-                setValueAfterSlippage(trades[0].minimumAmountOut(SLIPPAGE))
                 trade = trades[0]
+                setToAmount(trade.outputAmount.toExact())
+                setValueAfterSlippage(trade.minimumAmountOut(SLIPPAGE))
+
             }
         }
         else if (swapType === TradeType.EXACT_OUTPUT) {
@@ -168,9 +169,9 @@ const Home = () => {
             )
 
             if (trades.length > 0) {
-                setFromAmount(trades[0].inputAmount.toExact())
-                setValueAfterSlippage(trades[0].maximumAmountIn(SLIPPAGE))
                 trade = trades[0]
+                setFromAmount(trade.inputAmount.toExact())
+                setValueAfterSlippage(trade.maximumAmountIn(SLIPPAGE))
             }
         }
 
@@ -259,7 +260,7 @@ const Home = () => {
       <Text> { currentTrade ? `1 ${currentTrade.executionPrice.baseCurrency.symbol} = ${currentTrade.executionPrice.toSignificant(6)} ${currentTrade.executionPrice.quoteCurrency.symbol}` : null } </Text>
       <Text> { swapType === TradeType.EXACT_INPUT ? 'Min amount out' : 'Max amt in' }  { valueAfterSlippage?.toExact() } </Text>
       <Text> { currentTrade ? `This swap goes through curveId(s) ${currentTrade.route.pairs.map(pair => pair.curveId) }` : 'no route for trade' } </Text>
-      <Text> { currentTrade ? `Price impact: ${currentTrade.priceImpact.quotient}` : null }</Text>
+      <Text> { currentTrade ? `Price impact: ${currentTrade.priceImpact.quotient} %` : null }</Text>
       <Button isLoading={isLoading} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
