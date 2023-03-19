@@ -168,8 +168,8 @@ export const AddLiq = () => {
                 amountB = CurrencyAmount.fromRawAmount(tokenB, parseUnits(tokenBAmt, tokenB.decimals).toString())
             }
 
-            // slippage doesn't really matter in the case of creating a pair
-            // well, it's to guard against someone frontrunning your adding liq operation
+            // N.B slippage also matters during the creation of a pair to guard
+            // against someone frontrunning your adding liq operation
             const parameters: MethodParameters = Router.addLiquidityParameters(amountA, amountB, curveId, { allowedSlippage: SLIPPAGE, recipient: connectedAddress })
 
             setCalldata(parameters.calldata)
