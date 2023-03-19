@@ -129,10 +129,10 @@ const Home = () => {
 
     const from = TOKEN_ADDRESS[CHAINID][fromToken.id] === AddressZero
         ? Ether.onChain(CHAINID)
-        : new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], TOKEN_DECIMALS[CHAINID][fromToken.id])
+        : new Token(CHAINID, TOKEN_ADDRESS[CHAINID][fromToken.id], TOKEN_DECIMALS[CHAINID][fromToken.id], fromToken.id)
     const to = TOKEN_ADDRESS[CHAINID][toToken.id] === AddressZero
         ? Ether.onChain(CHAINID)
-        : new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], TOKEN_DECIMALS[CHAINID][toToken.id])
+        : new Token(CHAINID, TOKEN_ADDRESS[CHAINID][toToken.id], TOKEN_DECIMALS[CHAINID][toToken.id], toToken.id)
 
     const relevantPairs: Pair[] = await Fetcher.fetchRelevantPairs(
       CHAINID,
@@ -196,6 +196,9 @@ const Home = () => {
             setCalldata(swapParams.calldata)
             setValue(swapParams.value)
             setCurrentTrade(trade)
+
+            console.log(trade.priceImpact.numerator.toString() )
+            console.log(trade.priceImpact.denominator.toString() )
         }
     }
     else {
@@ -256,9 +259,10 @@ const Home = () => {
               <NumberInputField />
           </NumberInput>
       </Container>
-
+      <Text> { currentTrade ? `1 ${currentTrade.executionPrice.baseCurrency.symbol} = x ${currentTrade.executionPrice.quoteCurrency.symbol}` : null } </Text>
       <Text> { swapType === TradeType.EXACT_INPUT ? 'Min amount out' : 'Max amt in' }  { valueAfterSlippage?.toExact() } </Text>
       <Text> { currentTrade ? `This swap goes through curveId(s) ${currentTrade.route.pairs.map(pair => pair.curveId) }` : 'no route for trade' } </Text>
+      <Text> { currentTrade ? `Price impact: ${currentTrade.priceImpact.quotient}` : null }</Text>
       <Button isLoading={isLoading} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
