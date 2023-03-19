@@ -1,6 +1,6 @@
-# `demo-frontend for reservoir finance's AMM`
+# demo-frontend for reservoir finance's AMM
 
-# 🚀 `Quick Start`
+## 🚀 Quick Start
 
 💿 Install all dependencies:
 
@@ -18,10 +18,7 @@ npm run setupTest
 npm run deployStablePair
 ```
 3. `yarn dev`
-
-✏ Rename `.env.local.example` to `.env.local` and provide required data. Get your Web3 Api Key from the [Moralis dashboard](https://admin.moralis.io/):
-
-![image](https://user-images.githubusercontent.com/78314301/186810270-7c365d43-ebb8-4546-a383-32983fbacef9.png)
+4. Setup browser metamask to use local anvil as the RPC  
 
 🚴‍♂️ Run your App:
 
@@ -29,20 +26,7 @@ npm run deployStablePair
 yarn [start | dev] 
 ```
 
-# 🧭 `Table of contents`
-- [`ethereum-boilerplate`](#ethereum-boilerplate)
-- [🚀 Quick Start](#-quick-start)
-- [🧭 Table of contents](#-table-of-contents)
-- [🏗 Ethereum Components](#-ethereum-components)
-  - [`<NFTBalances />`](#nftbalances-)
-  - [`<ERC20Balances />`](#erc20balances-)
-  - [`<ERC20Transfers />`](#erc20transfers-)
-  - [`<NFTTransfers />`](#nfttransfers-)
-  - [`<Transactions />`](#transactions-)
-
-# 🏗 Ethereum Components
-
-Notes to the frontend team: 
+## Notes to the frontend team: 
 
 1. This repo demonstrates the use of the `@reservoir-labs/sdk` required to build a functioning frontend for the AMM. It is a minimal demo of the functional requirements stated in the scope of work.
 2. This is **NOT** an endorsement of:
