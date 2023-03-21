@@ -13,7 +13,7 @@ yarn install
 1. To set up infra for testing, clone [sdk repo](https://github.com/reservoir-labs/sdk)
 2. In the sdk repo, run the following commands to set up the provider and deploy the necessary contracts: 
 ```
-npm run anvil 
+npm run anvil:avax 
 npm run setupTest
 npm run deployStablePair
 ```
