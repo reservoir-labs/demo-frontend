@@ -140,7 +140,6 @@ const Home = () => {
       to.wrapped,
       provider
     )
-    console.log("rel p", relevantPairs)
 
     let trade
     if (relevantPairs.length > 0) {
@@ -150,9 +149,10 @@ const Home = () => {
                 // what's the best way to multiply the entered amount with the decimals?
                 CurrencyAmount.fromRawAmount(from, parseUnits(fromAmount.toString(), from.decimals).toString()),
                 to,
+                // N.B for this version of the frontend we're interested in routes up to 2 hops
+                // maxNumResults doesn't really matter since we're only using+displaying the best one anyway
                 { maxNumResults: 3, maxHops: 2},
             )
-            console.log("trades", trades)
             if (trades.length > 0) {
                 trade = trades[0]
                 setToAmount(trade.outputAmount.toExact())
@@ -197,6 +197,7 @@ const Home = () => {
             setCalldata(swapParams.calldata)
             setValue(swapParams.value)
             setCurrentTrade(trade)
+            console.log("mid", trade.route.midPrice.toSignificant(19))
         }
     }
     else {
@@ -260,7 +261,7 @@ const Home = () => {
       <Text> { currentTrade ? `1 ${currentTrade.executionPrice.baseCurrency.symbol} = ${currentTrade.executionPrice.toSignificant(6)} ${currentTrade.executionPrice.quoteCurrency.symbol}` : null } </Text>
       <Text> { swapType === TradeType.EXACT_INPUT ? 'Min amount out' : 'Max amt in' }  { valueAfterSlippage?.toExact() } </Text>
       <Text> { currentTrade ? `This swap goes through curveId(s) ${currentTrade.route.pairs.map(pair => pair.curveId) }` : 'no route for trade' } </Text>
-      <Text> { currentTrade ? `Price impact: ${currentTrade.priceImpact.quotient} %` : null }</Text>
+      <Text> { currentTrade ? `Price impact: ${currentTrade.priceImpact.toSignificant(4)} %` : null }</Text>
       <Button isLoading={isLoading} onClick={doSwap} type='submit' colorScheme='green' size='lg' spinnerPlacement='end'>Swap</Button>
 
       <Text maxWidth={'100%'}>On-chain simulation error returns {error?.message} </Text>
