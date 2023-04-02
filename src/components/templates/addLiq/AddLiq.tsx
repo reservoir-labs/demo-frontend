@@ -119,30 +119,30 @@ export const AddLiq = () => {
         }
 
         if (currentPair != null && lpTotalSupplyData != null) {
-            setPairTokenAReserves(currentPair.reserveOf(tokenA.wrapped).toSignificant(6))
-            setPairTokenBReserves(currentPair.reserveOf(tokenB.wrapped).toSignificant(6))
+            setPairTokenAReserves(currentPair.reserveOf(tokenA.wrapped).toExact())
+            setPairTokenBReserves(currentPair.reserveOf(tokenB.wrapped).toExact())
 
             const lpTotalSupply = CurrencyAmount.fromRawAmount(currentPair.liquidityToken, lpTotalSupplyData)
 
             if (tokenAAsQuote) {
-                // unsure if this is the best way or we can just use pair.token0/1Price()
-                const route: Route<Token, Token> = new Route([pair], tokenA.wrapped, tokenB.wrapped)
-                const midPrice = route.midPrice
+                // in univ2 they use the midPrice for quoting how many of each token to add
+                // but since the price calculation is different for ConstantProduct and Stable
+                // we need a new function
+                const liqRatio = currentPair.liqRatio(tokenA)
 
                 const tokenAQuoteAmt = CurrencyAmount.fromRawAmount(tokenA.wrapped, parseUnits(tokenAAmt, tokenA.decimals).toString())
-                const correspondingAmount = midPrice.quote(tokenAQuoteAmt)
-                setTokenBAmt(correspondingAmount.toSignificant(6))
+                const correspondingAmount = liqRatio.quote(tokenAQuoteAmt)
+                setTokenBAmt(correspondingAmount.toExact())
 
                 const mintedAmt = currentPair.getLiquidityMinted(lpTotalSupply, tokenAQuoteAmt, correspondingAmount)
                 setExpectedLpTokenAmt(mintedAmt.toExact())
             }
             else {
-                const route: Route<Token, Token> = new Route([currentPair], tokenB.wrapped, tokenA.wrapped)
-                const midPrice = route.midPrice
+                const liqRatio = currentPair.liqRatio(tokenB)
 
                 const tokenBQuoteAmt = CurrencyAmount.fromRawAmount(tokenB.wrapped, parseUnits(tokenBAmt, tokenB.decimals).toString())
-                const correspondingAmount = midPrice.quote(tokenBQuoteAmt)
-                setTokenAAmt(correspondingAmount.toSignificant(6))
+                const correspondingAmount = liqRatio.quote(tokenBQuoteAmt)
+                setTokenAAmt(correspondingAmount.toExact())
 
                 const mintedAmt = currentPair.getLiquidityMinted(lpTotalSupply, correspondingAmount, tokenBQuoteAmt)
                 setExpectedLpTokenAmt(mintedAmt.toExact())
@@ -183,7 +183,6 @@ export const AddLiq = () => {
         if (calldata === null || sendTransaction == null) {
             return
         }
-
         sendTransaction()
     }
 

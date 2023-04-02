@@ -64,6 +64,3 @@ yarn [start | dev]
 - Errors thrown in the console
   - sometimes it is due to two states being updated at the same time, but the hook runs first. If data is valid, there should be no error shown in the "on-chain simulation error returns"
   - so that should be the basis for your observation 
-
-- price impact 
-  - function not working at the moment, will provide an update once it's resolved
