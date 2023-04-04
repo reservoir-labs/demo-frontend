@@ -1,8 +1,17 @@
 import {Percent, WETH9} from "@reservoir-labs/sdk-core";
 import {AddressZero} from "@ethersproject/constants";
+import {MAINNET_ROUTER_ADDRESS, TESTNET_ROUTER_ADDRESS} from "@reservoir-labs/sdk";
 
-export const CHAINID = 43114
+const TESTNET = true
+
+export const CHAINID = TESTNET ? 43113 : 43114
 export const TOKEN_ADDRESS = {
+    43113: {
+        'USDC': '0x5D60473C5Cb323032d6fdFf42380B50E2AE4d245',
+        'USDT': '0x6e9FDaE1Fe20b0A5a605C879Ae14030a0aE99cF9',
+        'WAVAX': WETH9[43113].address,
+        'AVAX': AddressZero
+    },
     43114: {
         'USDC': '0x5D60473C5Cb323032d6fdFf42380B50E2AE4d245',
         'USDT': '0x6e9FDaE1Fe20b0A5a605C879Ae14030a0aE99cF9',
@@ -12,6 +21,12 @@ export const TOKEN_ADDRESS = {
 }
 
 export const TOKEN_DECIMALS = {
+    43113: {
+        'USDC': 6,
+        'USDT': 6,
+        'WAVAX': 18,
+        'AVAX': 18
+    },
     43114: {
         'USDC': 6,
         'USDT': 6,
@@ -20,7 +35,7 @@ export const TOKEN_DECIMALS = {
     }
 }
 export const SLIPPAGE = new Percent(1, 100) // 1%
-export const ROUTER_ADDRESS = '0x7f05c63dc7ca3f99f2d3409f0017c28058c42b27'
+export const ROUTER_ADDRESS = TESTNET ? MAINNET_ROUTER_ADDRESS : TESTNET_ROUTER_ADDRESS
 export const ROUTER_INTERFACE = [
     {
         "inputs": [

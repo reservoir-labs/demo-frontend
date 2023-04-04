@@ -47,7 +47,7 @@ const { provider, webSocketProvider } = configureChains(
     // arbitrum,
     // arbitrumGoerli,
     // // avalanche,
-    // avalancheFuji,
+    avalancheFuji,
     // bsc,
     // bscTestnet,
     // fantom,
