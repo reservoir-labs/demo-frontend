@@ -35,7 +35,7 @@ export const TOKEN_DECIMALS = {
     }
 }
 export const SLIPPAGE = new Percent(1, 100) // 1%
-export const ROUTER_ADDRESS = TESTNET ? MAINNET_ROUTER_ADDRESS : TESTNET_ROUTER_ADDRESS
+export const ROUTER_ADDRESS = TESTNET ? TESTNET_ROUTER_ADDRESS : MAINNET_ROUTER_ADDRESS
 export const ROUTER_INTERFACE = [
     {
         "inputs": [

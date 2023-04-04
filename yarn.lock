@@ -2078,10 +2078,10 @@
     "tiny-invariant" "^1.1.0"
     "toformat" "^2.0.0"
 
-"@reservoir-labs/sdk@^0.1.2":
-  "integrity" "sha512-i8jhnFa8KEVVo7lBcbDvl/MF0sZr3CZv7hiDYaTHdI6DAwHxsWisq/UBORzY5dQtbFQePTt/T3hT4pHF4F9amQ=="
-  "resolved" "https://registry.npmjs.org/@reservoir-labs/sdk/-/sdk-0.1.2.tgz"
-  "version" "0.1.2"
+"@reservoir-labs/sdk@^0.1.3":
+  "integrity" "sha512-Xn9xZRDiE1VgJx6jLp63ImEiAtvrDjgh0wcQmKI3OVT9YWm+w4lYVmG10mbmf/TzuEIapxEOjOxnr2xpqMpCFA=="
+  "resolved" "https://registry.npmjs.org/@reservoir-labs/sdk/-/sdk-0.1.3.tgz"
+  "version" "0.1.3"
   dependencies:
     "@ethersproject/address" "^5.0.0"
     "@ethersproject/bignumber" "^5.7.0"
