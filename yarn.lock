@@ -2066,10 +2066,10 @@
   "resolved" "https://registry.npmjs.org/@popperjs/core/-/core-2.11.6.tgz"
   "version" "2.11.6"
 
-"@reservoir-labs/sdk-core@^3.1.2":
-  "integrity" "sha512-91QX6Bt5vuQArapDy1TDcgi5VCI+5I+90ud9YAg2ltYkBfxe0AqhS4HnlGguyelszKDMmK5aHUbmrANyhuAR0Q=="
-  "resolved" "https://registry.npmjs.org/@reservoir-labs/sdk-core/-/sdk-core-3.1.2.tgz"
-  "version" "3.1.2"
+"@reservoir-labs/sdk-core@^3.1.3":
+  "integrity" "sha512-nTMZjnIVi4rcL+9EXkzF6CAflHbTnKAbg3GIGUi7AHt8sOGAg6OQwlUH0GZ6TxqlWldh7jagksMur20lrvWShA=="
+  "resolved" "https://registry.npmjs.org/@reservoir-labs/sdk-core/-/sdk-core-3.1.3.tgz"
+  "version" "3.1.3"
   dependencies:
     "@ethersproject/address" "^5.0.2"
     "big.js" "^5.2.2"
@@ -2078,10 +2078,10 @@
     "tiny-invariant" "^1.1.0"
     "toformat" "^2.0.0"
 
-"@reservoir-labs/sdk@^0.1.0":
-  "integrity" "sha512-/u6pAgXjjRADMFQvhrML44olENl2BtmkHd6nfejMZMnn2Ybiv0g93jpWad6xFYyKKNUTQHCowfJnBwwWTaWPYA=="
-  "resolved" "https://registry.npmjs.org/@reservoir-labs/sdk/-/sdk-0.1.0.tgz"
-  "version" "0.1.0"
+"@reservoir-labs/sdk@^0.1.2":
+  "integrity" "sha512-i8jhnFa8KEVVo7lBcbDvl/MF0sZr3CZv7hiDYaTHdI6DAwHxsWisq/UBORzY5dQtbFQePTt/T3hT4pHF4F9amQ=="
+  "resolved" "https://registry.npmjs.org/@reservoir-labs/sdk/-/sdk-0.1.2.tgz"
+  "version" "0.1.2"
   dependencies:
     "@ethersproject/address" "^5.0.0"
     "@ethersproject/bignumber" "^5.7.0"
@@ -2090,7 +2090,7 @@
     "@ethersproject/providers" "^5.7.2"
     "@ethersproject/solidity" "^5.0.0"
     "@ethersproject/wallet" "^5.7.0"
-    "@reservoir-labs/sdk-core" "^3.1.2"
+    "@reservoir-labs/sdk-core" "^3.1.3"
     "decimal.js" "^10.4.3"
     "jsbi" "^3.1.4"
     "tiny-invariant" "^1.1.0"
