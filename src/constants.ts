@@ -1,6 +1,6 @@
 import {Percent, WETH9} from "@reservoir-labs/sdk-core";
 import {AddressZero} from "@ethersproject/constants";
-import {MAINNET_ROUTER_ADDRESS, TESTNET_ROUTER_ADDRESS} from "@reservoir-labs/sdk";
+import { ROUTER_ADDRESS as SDK_ROUTER_ADDRESS } from "@reservoir-labs/sdk";
 
 const TESTNET = true
 
@@ -13,8 +13,8 @@ export const TOKEN_ADDRESS = {
         'AVAX': AddressZero
     },
     43114: {
-        'USDC': '0x5D60473C5Cb323032d6fdFf42380B50E2AE4d245',
-        'USDT': '0x6e9FDaE1Fe20b0A5a605C879Ae14030a0aE99cF9',
+        'USDC': '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
+        'USDT': '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
         'WAVAX': WETH9[43114].address,
         'AVAX': AddressZero
     }
@@ -35,7 +35,7 @@ export const TOKEN_DECIMALS = {
     }
 }
 export const SLIPPAGE = new Percent(1, 100) // 1%
-export const ROUTER_ADDRESS = TESTNET ? TESTNET_ROUTER_ADDRESS : MAINNET_ROUTER_ADDRESS
+export const ROUTER_ADDRESS = TESTNET ? SDK_ROUTER_ADDRESS[43113] : SDK_ROUTER_ADDRESS[43114]
 export const ROUTER_INTERFACE = [
     {
         "inputs": [
